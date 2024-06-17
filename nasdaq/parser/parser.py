@@ -287,14 +287,14 @@ def handleOrderReplace(pkg):
 
 
 if __name__ == '__main__':
-    with (open("orders.csv", "w") as orderFile,
-          open("ordersPreMarket.csv", "w") as orderPremarketFile,
-          open("executions.csv", "w") as executionFile,
-          open("executionsPreMarket.csv", "w") as executionPremarketFile,
-          open("cancellations.csv", "w") as cancellationFile,
-          open("cancellationsPreMarket.csv", "w") as cancellationPremarketFile,
-          open("stocks.csv", "w") as stocksFile,
-          open("marketMakers.csv", "w") as marketMakerFile):
+    with (open("../data/orders.csv", "w") as orderFile,
+          open("../data/ordersPreMarket.csv", "w") as orderPremarketFile,
+          open("../data/executions.csv", "w") as executionFile,
+          open("../data/executionsPreMarket.csv", "w") as executionPremarketFile,
+          open("../data/cancellations.csv", "w") as cancellationFile,
+          open("../data/cancellationsPreMarket.csv", "w") as cancellationPremarketFile,
+          open("../data/stocks.csv", "w") as stocksFile,
+          open("../data/marketMakers.csv", "w") as marketMakerFile):
 
         orderWriter = csv.writer(orderFile, delimiter=";")
         orderWriter.writerow(orderSchema)
@@ -317,7 +317,7 @@ if __name__ == '__main__':
         marketMakerWriter = csv.writer(marketMakerFile, delimiter=";")
         marketMakerWriter.writerow(marketMakerSchema)
 
-        with open("12302019.NASDAQ_ITCH50", mode='rb') as file:
+        with open("../data/12302019.NASDAQ_ITCH50", mode='rb') as file:
             fileContent = file.read()
             offset = 0
             while offset < len(fileContent):
