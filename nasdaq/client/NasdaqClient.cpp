@@ -14,7 +14,7 @@
 
 static void noticeProcessor(void* /*arg*/, const char* /*message*/) {}
 
-void NasdaqClient::connect(std::string_view host, std::string_view port, std::string_view user, std::string_view password, int numThreads)
+void NasdaqClient::connect(std::string_view host, std::string_view port, std::string_view user, std::string_view password)
 {
 
     std::stringstream connectionString;
@@ -27,17 +27,12 @@ void NasdaqClient::connect(std::string_view host, std::string_view port, std::st
     if (!password.empty())
         connectionString << "password=" << password << " ";
 
-
-    for (size_t idx = 0; idx < numThreads; ++idx)
-    {
-        auto str = connectionString.str();
-        conn = PQconnectdb(str.c_str());
-        if (const auto res = PQstatus(conn); res == CONNECTION_OK) {
-            PQsetNoticeProcessor(conn, noticeProcessor, nullptr);
-        } else
-        {
-            throw std::exception();
-        }
+    auto str = connectionString.str();
+    conn = PQconnectdb(str.c_str());
+    if (const auto res = PQstatus(conn); res == CONNECTION_OK) {
+        PQsetNoticeProcessor(conn, noticeProcessor, nullptr);
+    } else {
+        throw std::runtime_error("Could not connect to database");
     }
 }
 
@@ -64,35 +59,35 @@ void NasdaqClient::consume(PGconn* conn, size_t msgCount)
     // BEGIN
     auto tuples = PQgetResult(conn);
     if (PQresultStatus(tuples) != PGRES_COMMAND_OK)
-        throw std::exception();
+        throw std::runtime_error("Unexpected pipeline message");
 
     auto endOfQuery = PQgetResult(conn);
     if (endOfQuery != nullptr)
-        throw std::exception();
+        throw std::runtime_error("Unexpected pipeline message");
 
     for (int i = 0; i < msgCount; ++i)
     {
         tuples = PQgetResult(conn);
         if (PQresultStatus(tuples) != PGRES_COMMAND_OK)
-            throw std::exception();
+            throw std::runtime_error("Unexpected pipeline message");
 
 
         char* val = PQcmdTuples(tuples);
         if(val != std::string_view("1") && val != std::string_view("0"))
-            throw std::exception();
+            throw std::runtime_error("Unexpected pipeline message");
 
         endOfQuery = PQgetResult(conn);
         if (endOfQuery != nullptr)
-            throw std::exception();
+            throw std::runtime_error("Unexpected pipeline message");
     }
     // COMMIT
     tuples = PQgetResult(conn);
     if (PQresultStatus(tuples) != PGRES_COMMAND_OK)
-        throw std::exception();
+        throw std::runtime_error("Unexpected pipeline message");
 
     endOfQuery = PQgetResult(conn);
     if (endOfQuery != nullptr)
-        throw std::exception();
+        throw std::runtime_error("Unexpected pipeline message");
 }
 
 void NasdaqClient::sendOrder(const Order &order) const
@@ -126,7 +121,7 @@ void NasdaqClient::sendOrder(const Order &order) const
     paramLengths[7] = order.prevOrder == 0 ? 0 : strlen(paramValues[7]);
 
     if (PQsendQueryPrepared(conn, "newOrder", 8, paramValues, paramLengths, nullptr, 0) != 1)
-        throw std::exception();
+        throw std::runtime_error("Could not send new order");
 }
 
 void NasdaqClient::sendOrderbookAdd(uint64_t orderId, unsigned stockId, const std::string& side, const std::string& price,
@@ -153,7 +148,7 @@ void NasdaqClient::sendOrderbookAdd(uint64_t orderId, unsigned stockId, const st
     paramLengths[4] = strlen(paramValues[4]);
 
     if (PQsendQueryPrepared(conn, "addToOrderbook", 5, paramValues, paramLengths, nullptr, 0) != 1)
-        throw std::exception();
+        throw std::runtime_error("Could not add to order book");
 
 }
 
@@ -170,7 +165,7 @@ void NasdaqClient::sendOrderbookDelete(uint64_t orderId) const
     paramLengths[0] = strlen(paramValues[0]);
 
     if (PQsendQueryPrepared(conn, "deleteFromOrderbook", 1, paramValues, paramLengths, nullptr, 0) != 1)
-        throw std::exception();
+        throw std::runtime_error("could not delete from order book");
 }
 
 void NasdaqClient::sendOrderbookReduce(uint64_t orderId, unsigned quantity) const
@@ -188,7 +183,7 @@ void NasdaqClient::sendOrderbookReduce(uint64_t orderId, unsigned quantity) cons
     paramLengths[1] = strlen(paramValues[1]);
 
     if (PQsendQueryPrepared(conn, "reduceInOrderbook", 2, paramValues, paramLengths, nullptr, 0) != 1)
-        throw std::exception();
+        throw std::runtime_error("could not reduce in order book");
 }
 
 void NasdaqClient::sendExecution(const Execution& execution) const
@@ -217,7 +212,7 @@ void NasdaqClient::sendExecution(const Execution& execution) const
 
 
     if (PQsendQueryPrepared(conn, "newExecution", 5, paramValues, paramLengths, nullptr, 0) != 1)
-        throw std::exception();
+        throw std::runtime_error("could not add new execution");
 }
 
 void NasdaqClient::sendCancellation(const Cancellation& cancellation) const
@@ -242,13 +237,13 @@ void NasdaqClient::sendCancellation(const Cancellation& cancellation) const
     paramLengths[3] = cancellation.quantity == 0 ? 0 : strlen(paramValues[3]);
 
     if (PQsendQueryPrepared(conn, "newCancellation", 4, paramValues, paramLengths, nullptr, 0) != 1)
-        throw std::exception();
+        throw std::runtime_error("could not cancel order");
 }
 
 void NasdaqClient::finalize(size_t msgCount) const
 {
     if (PQsendQueryPrepared(conn, "commit", 0, nullptr, nullptr, nullptr, 0) != 1)
-        throw std::exception();
+        throw std::runtime_error("could not commit transaction");
 
     sendFlushRequest(conn);
     flush(conn);
@@ -300,7 +295,7 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
 
         // Start a transaction
         if (PQsendQueryPrepared(conn, "begin", 0, nullptr, nullptr, nullptr, 0) != 1)
-            throw std::exception();
+            throw std::runtime_error("could not start transaction");
 
 
         // Write orders
@@ -390,7 +385,7 @@ void NasdaqClient::loadFile(const std::string& filePath) const
         assert(conn);
         std::ifstream t(filePath);
         if (!t.is_open())
-            throw std::exception();
+            throw std::runtime_error("could not open file: " + filePath);
 
         return exec(conn, std::string(std::istreambuf_iterator(t), std::istreambuf_iterator<char>()));
 }
@@ -401,7 +396,7 @@ void NasdaqClient::exec(PGconn* conn, const std::string& command)
 
     PGresult* res = PQexec(conn, command.c_str());
     if (PQresultStatus(res) != PGRES_COMMAND_OK && PQresultStatus(res) != PGRES_TUPLES_OK)
-        throw std::exception();
+        throw std::runtime_error("could not execute command: " + command);
 }
 
 void NasdaqClient::loadCSV(std::string_view tblName, std::string_view path) const
@@ -418,7 +413,7 @@ void NasdaqClient::prepare(PGconn* conn, const std::string& name, const std::str
     {
         auto res = PQprepare(conn, name.c_str(), command.c_str(), 0, nullptr);
         if (PQresultStatus(res) != PGRES_COMMAND_OK && PQresultStatus(res) != PGRES_TUPLES_OK)
-            throw std::exception();
+            throw std::runtime_error("could not prepare query: " + command);
     }
 }
 
@@ -426,14 +421,14 @@ void NasdaqClient::enterPipelineMode(PGconn* conn)
 {
     assert(conn);
     if (PQenterPipelineMode(conn) != 1)
-        throw std::exception();
+        throw std::runtime_error("could not enter pipeline mode");
 }
 
 void NasdaqClient::exitPipelineMode(PGconn* conn)
 {
     assert(conn);
     if (PQexitPipelineMode(conn) != 1)
-        throw std::exception();
+        throw std::runtime_error("could not exit pipeline mode");
 
 }
 
@@ -442,24 +437,23 @@ void NasdaqClient::pipelineSync(PGconn* conn)
 {
     assert(conn);
     if (PQpipelineSync(conn) != 1)
-        throw std::exception();
+        throw std::runtime_error("could not sync pipeline");
 
     auto res = PQgetResult(conn);
     if (PQresultStatus(res) != PGRES_COMMAND_OK && PQresultStatus(res) != PGRES_TUPLES_OK)
-        throw std::exception();
+        throw std::runtime_error("could not sync pipeline");
     if (PQgetResult(conn) != nullptr)
-        throw std::exception();
+        throw std::runtime_error("could not sync pipeline");
 }
 
 void NasdaqClient::flush(PGconn* conn)
 {
     if (PQflush(conn) != 0)
-        throw std::exception();
+        throw std::runtime_error("could not flush connection");
 }
 
 void NasdaqClient::sendFlushRequest(PGconn* conn)
 {
     if (PQsendFlushRequest(conn) != 1)
-        throw std::exception();
+        throw std::runtime_error("could not send connection flush request");
 }
-

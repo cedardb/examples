@@ -1,13 +1,13 @@
 #include <string_view>
 #include "NasdaqClient.h"
 
-int main()
+int main(int argc, char *argv[])
 {
     NasdaqClient client;
-    client.connect("localhost", "5432", "lukas", "lukas", 1);
+    client.connect("localhost", "5432", "client", "client");
 
-    std::string sqlPath = "../../";
-    std::string dataPath = "../../data/";
+    std::string sqlPath = "./";
+    std::string dataPath = argv[1]; 
 
     client.createSchema(sqlPath + "schema.sql");
     client.loadStaticData(dataPath + "stocks.csv", dataPath + "marketMakers.csv");

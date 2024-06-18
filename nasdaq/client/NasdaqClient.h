@@ -11,7 +11,7 @@ class NasdaqClient {
     PGconn* conn;
 
 public:
-    void connect(std::string_view host, std::string_view port, std::string_view user, std::string_view password, int numThreads);
+    void connect(std::string_view host, std::string_view port, std::string_view user, std::string_view password);
 
     void createSchema(std::string_view schemaPath) const;
 
