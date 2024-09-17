@@ -2,7 +2,7 @@
 #define NASDAQCLIENT_H
 
 #include <string_view>
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 
 #include "libpq-fe.h"
 #include "thirdparty/csv.h"

@@ -1,6 +1,8 @@
 #!/bin/bash
-killall server
-~/path/to/cedardb/server -createdb /opt/dbs/stocks.db &
+set -x
+
+docker stop cedardb_nasdaq
+docker run --rm -p 5432:5432 -v .:/nasdaq --name=cedardb_nasdaq cedardb &
 sleep 2
-psql -h /tmp -U postgres -f initdb.sql
-client/NasdaqDriver ~/path/to/examples/nasdaq/data/
+docker exec -it cedardb_nasdaq psql -h /tmp -U postgres -c "create user client superuser; alter user client with password 'client'; create database client;"
+./bin/NasdaqDriver /nasdaq/data/ data/
