@@ -1,4 +1,4 @@
-_# Replaying the NASDAQ order book
+# Replaying the NASDAQ order book
 
 This is an example project live-replaying the complete NASDAQ exchange orders from 30-12-2019 with CedarDB.
 
@@ -91,7 +91,8 @@ psql -h localhost -U client
 Here are some example queries to get you started:
 
 ```sql
-client=# select count(*) from orders;
+client=#
+select count(*) from orders;
   count   
 ----------
  11019259
@@ -101,7 +102,8 @@ Time: 5.316 ms
 ```
 
 ```sql
-client=# select avg(price) from executions;
+client=#
+select avg(price) from executions;
              avg             
 -----------------------------
  140.21785151844912886904428
@@ -113,7 +115,8 @@ Time: 15.681 ms
 The following query calculates the new orders created per second averaged over the last 10 seconds.
 
 ```sql
-client=# select count(*) / 10 as new -- averaged over 10 seconds
+client=#
+select count(*) / 10 as new -- averaged over 10 seconds
 from  orders o
 where prevOrder is null -- == new order
 and o.timestamp > (select max(e.timestamp) from executions e) - 10::bigint * 1000 * 1000 * 1000; -- averaged over 10 seconds
