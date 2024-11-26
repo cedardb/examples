@@ -1,15 +1,15 @@
 begin;
-DROP TABLE IF EXISTS orderbook;
-DROP TABLE IF EXISTS executions;
-DROP TABLE IF EXISTS cancellations;
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS marketMakers;
-DROP TABLE IF EXISTS stocks;
+drop table if exists orderbook;
+drop table if exists executions;
+drop table if exists cancellations;
+drop table if exists orders;
+drop table if exists marketMakers;
+drop table if exists stocks;
 
-CREATE TABLE stocks
+create table stocks
 (
     stockId                     int primary key,
-    name                        text,
+    name                        text unique,
     marketCategory              text,
     financialStatusIndicator    text,
     roundLotSize                int,
@@ -25,56 +25,56 @@ CREATE TABLE stocks
     InverseIndicator            bool
 );
 
-CREATE TABLE marketmakers
+create table marketmakers
 (
     timestamp   bigint,
-    stockId     int references stocks,
+    stockId     int,
     name        text,
     isPrimary   bool,
     mode        text,
     state       text
 );
 
-CREATE TABLE orders
+create table orders
 (
-    stockId     int references stocks,
-    timestamp   bigint,
-    orderId     bigint primary key,
+    stockId     int not null,
+    timestamp   bigint not null,
+    orderId     bigint primary key not null,
     side        text,
-    quantity    int,
-    price       numeric(10,4),
+    quantity    int not null,
+    price       numeric(10,4) not null,
     attribution text,
     prevOrder   bigint
 );
 
-CREATE TABLE executions
+create table executions
 (
-    timestamp   bigint,
-    orderId     bigint, --references orders,
-    stockId     int references stocks,
-    quantity    int,
-    price       numeric(10,4)
+    timestamp   bigint not null,
+    orderId     bigint,
+    stockId     int not null,
+    quantity    int not null,
+    price       numeric(10,4),
 );
 
-
-CREATE TABLE cancellations
+create table cancellations
 (
-    timestamp   bigint,
-    orderId     bigint, --references orders,
-    stockId     int references stocks,
+    timestamp   bigint not null,
+    orderId     bigint not null,
+    stockId     int not null,
     quantity    int
 );
 
-CREATE TABLE orderbook
+create table orderbook
 (
-    orderId     bigint references orders,
-    stockId     int references stocks,
+    orderId     bigint,
+    stockId     int,
     side        text,
     price       numeric(10,4),
     quantity    int,
     primary key(orderid, price)
 );
 commit;
+
 begin bulk write;
 create index on orderbook(orderId);
 create index on cancellations(timestamp);

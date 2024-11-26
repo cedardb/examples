@@ -1,7 +1,3 @@
-//
-// Created by lukie on 15.05.2024.
-//
-
 #include "NasdaqClient.h"
 #include "thirdparty/csv.h"
 
@@ -16,7 +12,6 @@ static void noticeProcessor(void* /*arg*/, const char* /*message*/) {}
 
 void NasdaqClient::connect(std::string_view host, std::string_view port, std::string_view user, std::string_view password)
 {
-
     std::stringstream connectionString;
     if (!host.empty())
         connectionString << "host=" << host << " ";
@@ -92,7 +87,6 @@ void NasdaqClient::consume(PGconn* conn, size_t msgCount)
 
 void NasdaqClient::sendOrder(const Order &order) const
 {
-
     const char* paramValues[8];
     int paramLengths[8];
 
@@ -285,8 +279,6 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
     executionsReader.read_row(execution.timestamp, execution.orderId, execution.stockId, execution.quantity, execution.price);
     cancellationsReader.read_row(cancellation.timestamp, cancellation.orderId, cancellation.stockId, cancellation.quantity);
 
-
-
     while (true)
     {
         auto curTime = time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
@@ -335,12 +327,10 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
             executionsReader.read_row(execution.timestamp, execution.orderId, execution.stockId, execution.quantity, execution.price);
             assert(execution.timestamp >= prevTimestamp);
             prevTimestamp = execution.timestamp;
-
         }
 
 
         // Write cancellations
-
         prevTimestamp = cancellation.timestamp;
         while (cancellation.timestamp < limit)
         {
@@ -364,7 +354,6 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
         std::cout << "Messages: " << counter << std::endl;
 
         finalize(counter);
-
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     exitPipelineMode(conn);

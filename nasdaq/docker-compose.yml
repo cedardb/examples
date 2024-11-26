@@ -1,0 +1,39 @@
+services:
+  cedar:
+    container_name: cedar
+    image: cedardb
+    restart: always
+    environment:
+      CEDAR_DB: postgres
+      CEDAR_USER: postgres
+      CEDAR_PASSWORD: postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
+      interval: 10s
+      timeout: 1s
+      retries: 10
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=100ms
+    ports:
+      - 3000:3000
+    depends_on:
+      - cedar
+    volumes:
+      - ./grafana:/etc/grafana/provisioning
+  client:
+    build:
+      context: client
+      dockerfile: Dockerfile
+    depends_on:
+      cedar:
+        condition: service_healthy
+    volumes:
+      - .:/nasdaq

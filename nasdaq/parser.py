@@ -1,7 +1,9 @@
 import csv
 from dataclasses import dataclass
 
+import argparse
 import struct
+import os
 
 ORDER_ADD_ID = b'A'
 ORDER_ADD_WITH_MPID_ID = b'F'
@@ -286,15 +288,32 @@ def handleOrderReplace(pkg):
     return Order(stockId, timestamp, newOrderId, None, quantity, price / 10000, None, orderId)
 
 
-if __name__ == '__main__':
-    with (open("../data/orders.csv", "w") as orderFile,
-          open("../data/ordersPreMarket.csv", "w") as orderPremarketFile,
-          open("../data/executions.csv", "w") as executionFile,
-          open("../data/executionsPreMarket.csv", "w") as executionPremarketFile,
-          open("../data/cancellations.csv", "w") as cancellationFile,
-          open("../data/cancellationsPreMarket.csv", "w") as cancellationPremarketFile,
-          open("../data/stocks.csv", "w") as stocksFile,
-          open("../data/marketMakers.csv", "w") as marketMakerFile):
+def main():
+    parser = argparse.ArgumentParser(description="Process a source and output directory.")
+    
+    # Add arguments for source and output directories
+    parser.add_argument("dumpFile", type=str, help="Path to the unzipped NASDAQ dump file")
+    parser.add_argument("outputDir", type=str, help="Path to the output directory")
+    
+    # Parse the command-line arguments
+    args = parser.parse_args()
+    
+    # Access the arguments
+    source_file = args.dumpFile
+    output_dir = args.outputDir
+        
+    # Ensure the output directory exists (create it if needed)
+    os.makedirs(output_dir, exist_ok=True)
+    
+
+    with (open(os.path.join(output_dir, "orders.csv"), "w") as orderFile,
+          open(os.path.join(output_dir, "ordersPreMarket.csv"), "w") as orderPremarketFile,
+          open(os.path.join(output_dir, "executions.csv"), "w") as executionFile,
+          open(os.path.join(output_dir, "executionsPreMarket.csv"), "w") as executionPremarketFile,
+          open(os.path.join(output_dir, "cancellations.csv"), "w") as cancellationFile,
+          open(os.path.join(output_dir, "cancellationsPreMarket.csv"), "w") as cancellationPremarketFile,
+          open(os.path.join(output_dir, "stocks.csv"), "w") as stocksFile,
+          open(os.path.join(output_dir, "marketMakers.csv"), "w") as marketMakerFile):
 
         orderWriter = csv.writer(orderFile, delimiter=";")
         orderWriter.writerow(orderSchema)
@@ -317,7 +336,10 @@ if __name__ == '__main__':
         marketMakerWriter = csv.writer(marketMakerFile, delimiter=";")
         marketMakerWriter.writerow(marketMakerSchema)
 
-        with open("../data/12302019.NASDAQ_ITCH50", mode='rb') as file:
+        msgCount = 0
+        seenStocks = []
+
+        with open(source_file, mode='rb') as file:
             fileContent = file.read()
             offset = 0
             while offset < len(fileContent):
@@ -331,7 +353,13 @@ if __name__ == '__main__':
 
                 if msgType == STOCK_DIRECTORY_ID:
                     directoryEntry = handleStockDirectory(pkg)
-                    stocksWriter.writerow(directoryEntry.__dict__.values())
+                    # Some aspects of a stock can be updated.
+                    # To keep the complexity low, we don't model that and just ignore updates
+                    # Quadratic complexity is ok here since there are at most a few thousand stocks
+                    if directoryEntry.stockId not in seenStocks:
+                        stocksWriter.writerow(directoryEntry.__dict__.values())
+                        seenStocks.append(directoryEntry.stockId)
+
 
                 elif msgType == MARKET_MAKER_ID:
                     marketMaker = handleMarketMakers(pkg)
@@ -375,3 +403,10 @@ if __name__ == '__main__':
                         cancellationWriter.writerow(cancellation.__dict__.values())
 
                 offset += msgLen + 2
+                msgCount += 1
+                if msgCount % 1000000 == 0:
+                    print(f"Parsed {msgCount} messages. At offset {offset}/{len(fileContent)} ({offset / len(fileContent) * 100:.2f}%)")
+
+
+if __name__ == '__main__':
+    main()

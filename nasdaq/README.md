@@ -1,97 +1,82 @@
 # Replaying the NASDAQ order book
 
-This is an example project live-replaying the complete NASDAQ exchange orders from 30-12-2019 with CedarDB.
+This is an example project live-replaying the complete NASDAQ exchange orders from January 30 2020 with CedarDB.
+For an overview of the dataset, take a look at [our example dataset docs](https://cedardb.com/docs/example_datasets/nasdaq/).
 
-The example consists of separate applications:
 
-1. A parser written in Python that parses NASDAQ's proprietary ITCHv5 protocol into human-readable CSV files
+This example consists of separate applications:
+
+1. A parser written in Python that parses NASDAQ's proprietary ITCHv5 protocol into human-readable CSV files.
 2. A C++ client connecting to CedarDB and live-replaying all orders.
+3. A Grafana Dashboard displaying live analytics (pictured below).
+
+
+![Grafana](./grafana.png)
+
+In addition to Grafana, you can also issue queries yourself to get insight into the market state.
+This guide will show you how to do both using `docker compose`.
 
 
 ## Getting started
 
-1. Download the raw binary package capture that NASDAQ provides.
-This downloads about 3.3 GB, which decompresses to around 7.7 GB.
+This guide assumes you already have a cedardb docker image, i.e. have completed [this guide](https://cedardb.com/docs/getting_started/running_docker_image/) up to step two.
 
+### 1. Prepare the data 
+Execute the `prepare.sh` script:
 ```shell
-mkdir data && cd data
-wget https://emi.nasdaq.com/ITCH/Nasdaq%20ITCH/12302019.NASDAQ_ITCH50.gz
-gunzip 12302019.NASDAQ_ITCH50.gz
+./prepare.sh
 ```
-
-2. Transform the binary data into CSV files using the parser python script (will take a few minutes to write ~10 GB CSV files).
-
-```shell
-cd ../parser
-python3 parser.py 
-```
+It downloads the raw binary package capture that NASDAQ provides, extracts it and transforms it into CSV files.
+This downloads about 3.3 GB and writes ~16 GB CSV files.
 
 You should now have a set of files in the data directory containing the stock exchange events:
 
 ```shell
-cd ..
 du -h data/*.csv
 ```
 
 ```
-3,4G	cancellations.csv
-74M	    cancellationsPreMarket.csv
-230M	executions.csv
-1,2M	executionsPreMarket.csv
-7,4M	marketMakers.csv
-6,2G	orders.csv
-124M	ordersPreMarket.csv
-516K	stocks.csv
+5,3G	data/cancellations.csv
+181M	data/cancellationsPreMarket.csv
+337M	data/executions.csv
+2,7M	data/executionsPreMarket.csv
+7,5M	data/marketMakers.csv
+9,8G	data/orders.csv
+279M	data/ordersPreMarket.csv
+516K	data/stocks.csv
 ```
 
-3. Build the client.
-This is a C++ client that connects to CedarDB, or any PostgreSQL compatible database using libpq.
-Dependencies on Ubuntu: `g++ cmake libpq-dev`.
-
+### 2. Run the application
 ```shell
-cmake client -DCMAKE_BUILD_TYPE=Release -B bin
-cmake --build bin
-```
-
-4. Start cedardb
-
-```shell
-docker run --rm -p 5432:5432 -v .:/nasdaq --name=cedardb_nasdaq cedardb
-```
-
-5. Create a user for the stocks database:
-
-```shell
-docker exec -it cedardb_nasdaq psql -h /tmp -U postgres -c "create user client superuser; alter user client with password 'client'; create database client;"
-```
-
-6. Start the client.
-The client connects to CedarDB, loads the static `schema.sql`, and loads the static stocks and market makers data.
-Then, we load the pre-market orders, executions and cancellations data.
-
-```shell
-./bin/NasdaqDriver /nasdaq/data/ data/
+docker compose build client
+docker compose up
 ```
 
 While the client is running, it replays the live exchange data in 100ms batches, treating the point in time the program was started as 9:30 AM, i.e. the exact instance the market opens.
-In the first minute, the client catches up to the live transaction stream and starts inserting many messages.
-Afterward, you should get message batches of a couple of thousand messages per 100ms.
+In the first minute, the client catches up to the live transaction stream and starts inserting many events.
+Afterward, you should get batches of a couple of thousand events per 100ms.
 So, if you run the client for 30 minutes, the database state will represent the state of the NASDAQ exchange 30 minutes after market open, i.e., 10:00 AM.
 
-For your convenience, you can also use the supplied `run.sh` script to start CedarDB and the Nasdaq driver automatically.
 
-7. Query the data.
+You can stop the application via `CTRL+C` followed by `docker compose down`
 
-You can now connect with another PostgreSQL client and query all tables while they are updated in real-time.
-For example, connect with a command-line client, with the default password `client` as configured above.
+### 3. Connect to Grafana
+You can now browse to Grafana at http://localhost:3000, log in with username `admin` and password `admin`, and view the NASDAQ dashboard.
+
+![Grafana Instructions](./grafana_instructions.png)
+
+
+### 4. Query the data
+Alternatively, you can run your own queries:  
+
 ```shell
-psql -h localhost -U client
+PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
 ```
 
 Here are some example queries to get you started:
 
 ```sql
-client=#
+postgres=#
 select count(*) from orders;
   count   
 ----------
@@ -102,7 +87,7 @@ Time: 5.316 ms
 ```
 
 ```sql
-client=#
+postgres=#
 select avg(price) from executions;
              avg             
 -----------------------------
@@ -132,14 +117,14 @@ You can find some more complex queries in the `sql` subdirectory.
 
 ## Load everything
 
-To load the complete dataset all at once, you can start CedarDB with the steps until 5., and then directly copy the CSV data:
+To load the complete dataset all at once, you can start CedarDB after step 1, and then directly copy the CSV data:
 
 ```shell
-psql -h localhost -U client
+PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
 ```
 
 ```sql
-\i schema.sql
+\i client/schema.sql
 \copy stocks from data/stocks.csv with(format text, delimiter ';', null '', header true)
 \copy marketmakers from data/marketMakers.csv with(format text, delimiter ';', null '', header true)
 \copy orders from data/ordersPreMarket.csv with(format text, delimiter ';', null '', header true)
@@ -151,4 +136,3 @@ psql -h localhost -U client
 ```
 
 Please note that this does not maintain the orderbook, which would be maintained by the client.
-
