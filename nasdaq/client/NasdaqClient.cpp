@@ -55,10 +55,12 @@ void NasdaqClient::consume(PGconn* conn, size_t msgCount)
     auto tuples = PQgetResult(conn);
     if (PQresultStatus(tuples) != PGRES_COMMAND_OK)
         throw std::runtime_error("Unexpected pipeline message");
+    PQclear(tuples);
 
     auto endOfQuery = PQgetResult(conn);
     if (endOfQuery != nullptr)
         throw std::runtime_error("Unexpected pipeline message");
+    PQclear(endOfQuery);
 
     for (int i = 0; i < msgCount; ++i)
     {
@@ -70,19 +72,23 @@ void NasdaqClient::consume(PGconn* conn, size_t msgCount)
         char* val = PQcmdTuples(tuples);
         if(val != std::string_view("1") && val != std::string_view("0"))
             throw std::runtime_error("Unexpected pipeline message");
+        PQclear(tuples);
 
         endOfQuery = PQgetResult(conn);
         if (endOfQuery != nullptr)
             throw std::runtime_error("Unexpected pipeline message");
+        PQclear(endOfQuery);
     }
     // COMMIT
     tuples = PQgetResult(conn);
     if (PQresultStatus(tuples) != PGRES_COMMAND_OK)
         throw std::runtime_error("Unexpected pipeline message");
+    PQclear(tuples);
 
     endOfQuery = PQgetResult(conn);
     if (endOfQuery != nullptr)
         throw std::runtime_error("Unexpected pipeline message");
+    PQclear(endOfQuery);
 }
 
 void NasdaqClient::sendOrder(const Order &order) const
@@ -386,6 +392,7 @@ void NasdaqClient::exec(PGconn* conn, const std::string& command)
     PGresult* res = PQexec(conn, command.c_str());
     if (PQresultStatus(res) != PGRES_COMMAND_OK && PQresultStatus(res) != PGRES_TUPLES_OK)
         throw std::runtime_error("could not execute command: " + command);
+    PQclear(res);
 }
 
 void NasdaqClient::loadCSV(std::string_view tblName, std::string_view path) const
@@ -403,6 +410,7 @@ void NasdaqClient::prepare(PGconn* conn, const std::string& name, const std::str
         auto res = PQprepare(conn, name.c_str(), command.c_str(), 0, nullptr);
         if (PQresultStatus(res) != PGRES_COMMAND_OK && PQresultStatus(res) != PGRES_TUPLES_OK)
             throw std::runtime_error("could not prepare query: " + command);
+        PQclear(res);
     }
 }
 
@@ -431,6 +439,8 @@ void NasdaqClient::pipelineSync(PGconn* conn)
     auto res = PQgetResult(conn);
     if (PQresultStatus(res) != PGRES_COMMAND_OK && PQresultStatus(res) != PGRES_TUPLES_OK)
         throw std::runtime_error("could not sync pipeline");
+    PQclear(res);
+
     if (PQgetResult(conn) != nullptr)
         throw std::runtime_error("could not sync pipeline");
 }
