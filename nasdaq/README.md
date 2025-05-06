@@ -125,14 +125,14 @@ PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
 
 ```sql
 \i client/schema.sql
-\copy stocks from data/stocks.csv with(format text, delimiter ';', null '', header true)
-\copy marketmakers from data/marketMakers.csv with(format text, delimiter ';', null '', header true)
-\copy orders from data/ordersPreMarket.csv with(format text, delimiter ';', null '', header true)
-\copy orders from data/orders.csv with(format text, delimiter ';', null '', header true)
-\copy executions from data/executionsPreMarket.csv with(format text, delimiter ';', null '', header true)
-\copy executions from data/executions.csv with(format text, delimiter ';', null '', header true)
-\copy cancellations from data/cancellationsPreMarket.csv with(format text, delimiter ';', null '', header true)
-\copy cancellations from data/cancellations.csv with(format text, delimiter ';', null '', header true)
+copy stocks from '/data/stocks.csv' with(format text, delimiter ';', null '', header true);
+copy marketmakers from '/data/marketMakers.csv' with(format text, delimiter ';', null '', header true);
+copy orders from '/data/ordersPreMarket.csv' with(format text, delimiter ';', null '', header true);
+copy orders from '/data/orders.csv' with(format text, delimiter ';', null '', header true);
+copy executions from '/data/executionsPreMarket.csv' with(format text, delimiter ';', null '', header true);
+copy executions from '/data/executions.csv' with(format text, delimiter ';', null '', header true);
+copy cancellations from '/data/cancellationsPreMarket.csv' with(format text, delimiter ';', null '', header true);
+copy cancellations from '/data/cancellations.csv' with(format text, delimiter ';', null '', header true);
 ```
 
 Please note that this does not maintain the orderbook, which would be maintained by the client.
