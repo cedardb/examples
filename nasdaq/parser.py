@@ -145,7 +145,7 @@ def handleMarketMakers(pkg):
     (mode,) = struct.unpack("!c", pkg[24:25])
     (state,) = struct.unpack("!c", pkg[25:26])
 
-    timestamp = int.from_bytes(timestamp)
+    timestamp = int.from_bytes(timestamp, byteorder="big")
     name = name.decode('ascii').strip()
     isPrimary = True if isPrimary == 'Y' else False
     mode = mode.decode('ascii').strip()
@@ -198,7 +198,7 @@ def handleOrderAdd(pkg):
     (quantity,) = struct.unpack("!I", pkg[20:24])
     (price,) = struct.unpack("!I", pkg[32:36])
 
-    timestamp = int.from_bytes(timestamp)
+    timestamp = int.from_bytes(timestamp, byteorder="big")
     side = sideToStr(side)
 
     return Order(stockId, timestamp, orderId, side, quantity, price / 10000, None, None)
@@ -213,7 +213,7 @@ def handleOrderAddWithAttribution(pkg):
     (price,) = struct.unpack("!I", pkg[32:36])
     (attribution,) = struct.unpack("!4s", pkg[36:40])
 
-    timestamp = int.from_bytes(timestamp)
+    timestamp = int.from_bytes(timestamp, byteorder="big")
     side = sideToStr(side)
     attribution = attribution.decode('ascii').strip()
 
@@ -226,7 +226,7 @@ def handleOrderExecute(pkg):
     (orderId,) = struct.unpack("!Q", pkg[11:19])
     (quantity,) = struct.unpack("!I", pkg[19:23])
 
-    timestamp = int.from_bytes(timestamp)
+    timestamp = int.from_bytes(timestamp, byteorder="big")
 
     return Execution(timestamp, orderId, stockId, quantity, None)
 
@@ -238,7 +238,7 @@ def handleOrderExecuteWithPrice(pkg):
     (quantity,) = struct.unpack("!I", pkg[19:23])
     (price,) = struct.unpack("!I", pkg[32:36])
 
-    timestamp = int.from_bytes(timestamp)
+    timestamp = int.from_bytes(timestamp, byteorder="big")
 
     return Execution(timestamp, orderId, stockId, quantity, price / 10000)
 
@@ -249,7 +249,7 @@ def handleTrade(pkg):
     (quantity,) = struct.unpack("!I", pkg[20:24])
     (price,) = struct.unpack("!I", pkg[32:36])
 
-    timestamp = int.from_bytes(timestamp)
+    timestamp = int.from_bytes(timestamp, byteorder="big")
 
     return Execution(timestamp, None, stockId, quantity, price / 10000)
 
@@ -260,7 +260,7 @@ def handleOrderCancel(pkg):
     (orderId,) = struct.unpack("!Q", pkg[11:19])
     (quantity,) = struct.unpack("!I", pkg[19:23])
 
-    timestamp = int.from_bytes(timestamp)
+    timestamp = int.from_bytes(timestamp, byteorder="big")
 
     return Cancellation(timestamp, orderId, stockId, quantity)
 
@@ -270,7 +270,7 @@ def handleOrderDelete(pkg):
     (timestamp,) = struct.unpack("!6s", pkg[5:11])
     (orderId,) = struct.unpack("!Q", pkg[11:19])
 
-    timestamp = int.from_bytes(timestamp)
+    timestamp = int.from_bytes(timestamp, byteorder="big")
 
     return Cancellation(timestamp, orderId, stockId, None)
 
@@ -283,7 +283,7 @@ def handleOrderReplace(pkg):
     (quantity,) = struct.unpack("!I", pkg[27:31])
     (price,) = struct.unpack("!I", pkg[31:35])
 
-    timestamp = int.from_bytes(timestamp)
+    timestamp = int.from_bytes(timestamp, byteorder="big")
 
     return Order(stockId, timestamp, newOrderId, None, quantity, price / 10000, None, orderId)
 
