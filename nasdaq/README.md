@@ -3,8 +3,8 @@
 This is an example project live-replaying the complete NASDAQ exchange orders from January 30 2020 with CedarDB.
 For an overview of the dataset, take a look at [our example dataset docs](https://cedardb.com/docs/example_datasets/nasdaq/).
 
-What's especially noteworthy here is that CedarDB is not only running the transactional query workload,
-inserting thousands of events every 100 ms, but also the complex analytical queries which feed the various
+What's especially noteworthy here is that CedarDB is not only running the **transactional query workload**,
+inserting thousands of events every 100 ms, but also the **complex analytical queries** which feed the various
 views in the Grafana dashboard.  It's an excellent illustration of the power of Hybrid Transactional/Analytical
 Processing (HTAP).
 
