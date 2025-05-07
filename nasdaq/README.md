@@ -67,7 +67,9 @@ You can now browse to Grafana at http://localhost:3000, log in with username `ad
 
 
 ### 4. Query the data
-Alternatively, you can run your own queries:  
+Alternatively, you can run your own queries.  This requires installation of the `psql` PostgreSQL command line interface.
+Note that, for the `Time:` values to appear, you need to either run `\timing on` from within the session or
+have a `$HOME/.psqlrc` file containing at least the following line: `\timing on`.
 
 ```shell
 PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
@@ -117,11 +119,19 @@ You can find some more complex queries in the `sql` subdirectory.
 
 ## Load everything
 
-To load the complete dataset all at once, you can start CedarDB after step 1, and then directly copy the CSV data:
+Start the Docker image, mounting the `./data` directory containing the CSV data:
+
+```shell
+docker run --rm -p 5432:5432 -e CEDAR_PASSWORD=postgres -v ./data:/data --name cedardb cedardb
+```
+
+Connect to CedarDB via the `psql` CLI:
 
 ```shell
 PGPASSWORD=postgres psql -h localhost -U postgres -d postgres
 ```
+
+Using the `psql` client, run the DDL and then directly copy the CSV data:
 
 ```sql
 \i client/schema.sql
@@ -135,4 +145,7 @@ copy cancellations from '/data/cancellationsPreMarket.csv' with(format text, del
 copy cancellations from '/data/cancellations.csv' with(format text, delimiter ';', null '', header true);
 ```
 
+Try running some ad hoc SQL queries.
+
 Please note that this does not maintain the orderbook, which would be maintained by the client.
+
