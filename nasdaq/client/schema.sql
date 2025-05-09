@@ -1,4 +1,3 @@
-begin;
 drop table if exists orderbook;
 drop table if exists executions;
 drop table if exists cancellations;
@@ -53,7 +52,7 @@ create table executions
     orderId     bigint,
     stockId     int not null,
     quantity    int not null,
-    price       numeric(10,4),
+    price       numeric(10,4)
 );
 
 create table cancellations
@@ -75,9 +74,7 @@ create table orderbook
 );
 commit;
 
-begin bulk write;
 create index on orderbook(orderId);
 create index on cancellations(timestamp);
 create index on executions(timestamp);
 create index on orders(timestamp);
-commit;
