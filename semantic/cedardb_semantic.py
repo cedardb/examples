@@ -175,7 +175,7 @@ def decode(b64):
   return b.decode(CHARSET).strip()
 
 sql_search = """
-SELECT uri, 1 - (embedding <=> (%s)::VECTOR) sim, chunk
+SELECT uri, 1 - (embedding <=> (%s)::VECTOR) sim, chunk, chunk_num
 FROM text_embed
 ORDER BY sim DESC
 LIMIT %s
@@ -191,18 +191,16 @@ def get_embed_for_search(query_string):
 def search(conn, terms, limit):
   rv = []
   q = ' '.join(terms)
-  #embed_list = list(embed_model.embed([q]))
-  #embed = embed_list[0]
   embed = get_embed_for_search(q)
   logging.info("Query string: '{}'".format(q))
   t0 = time.time()
   rs = conn.execute(sql_search, (embed.tolist(), limit))
   if rs is not None:
     for row in rs:
-      (uri, sim, chunk) = row
+      (uri, sim, chunk, chunk_num) = row
       if len(chunk) > 96:
         chunk = chunk[0:96] + " ..."
-      rv.append({"uri": uri, "score": float(sim), "chunk": chunk})
+      rv.append({"uri": uri, "score": float(sim), "chunk": chunk, "chunk_num": int(chunk_num)})
   et = time.time() - t0
   logging.info("SQL query time: {:.2f} ms".format(et * 1000))
   return rv
