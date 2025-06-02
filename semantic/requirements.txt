@@ -1,0 +1,8 @@
+psycopg[binary, pool]
+Flask==2.1.0
+Werkzeug==2.2.2
+waitress
+scikit-learn
+pgvector
+nltk
+bs4
