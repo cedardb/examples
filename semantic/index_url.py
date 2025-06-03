@@ -6,7 +6,7 @@ import sys, os, re
 import time
 
 host = os.environ.get("FLASK_HOST", "localhost")
-port = os.environ.get("FLASK_PORT", "18080")
+port = os.environ.get("FLASK_PORT", "1999")
 url = "http://{}:{}/index".format(host, port)
 
 if len(sys.argv) < 2:

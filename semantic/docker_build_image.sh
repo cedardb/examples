@@ -5,7 +5,7 @@
 # Ref: https://everythingdevops.dev/building-x86-images-on-an-apple-m1-chip/
 if [[ "x86" == "$arch" ]]
 then
-  docker buildx build --platform=linux/amd64 -t $docker_id/$img_name .
+  docker buildx build --platform=linux/amd64 -t $docker_id/$img_name --load .
 elif [[ "arm" == "$arch" ]]
 then
   docker build -t $docker_id/$img_name .
