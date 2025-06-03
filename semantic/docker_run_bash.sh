@@ -1,13 +1,11 @@
 #!/bin/bash
 
 # EDIT THESE TO SUIT YOUR DEPLOYMENT
-crdb_certs="$HOME/certs"
-export DB_URL="postgres://test_role:123abc@host.docker.internal:26257/defaultdb?sslmode=require&sslrootcert=$crdb_certs/ca.crt"
+export DB_URL="postgres://postgres:postgres@localhost:5432/postgres"
 port=1972 # You point your client at this port on localhost, so 'export FLASK_PORT=1999' in env.sh
 
 # THESE ARE PROBABLY ALRIGHT AS-IS
 . ./docker_include.sh
-arch=$( uname -p )
 img_name="crdb-embeddings-$arch"
 img="$docker_id/$img_name"
 
