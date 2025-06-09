@@ -8,10 +8,13 @@ from flask import Flask, request, Response
 import json
 import base64
 import requests
+from bs4 import BeautifulSoup
 from fastembed import TextEmbedding
 import resource, platform
 import nltk
 from functools import lru_cache
+import hashlib, hmac
+import random
 
 # Attempt to catch onnxruntime exceptions
 from onnxruntime.capi.onnxruntime_pybind11_state import RuntimeException
@@ -71,9 +74,18 @@ et = time.time() - t0
 logging.info("NLTK ready: {:.2f} s".format(et))
 
 ddl_t1 = """
-CREATE TABLE text_embed
+CREATE TABLE text_embed_freshness
 (
   uri STRING NOT NULL
+  , sha256 VARCHAR(64)
+  , PRIMARY KEY (uri)
+);
+"""
+
+ddl_t2 = """
+CREATE TABLE text_embed
+(
+  uri STRING NOT NULL REFERENCES text_embed_freshness (uri)
   , chunk_num INT NOT NULL
   , chunk STRING NOT NULL
   , embedding VECTOR ({})
@@ -104,15 +116,18 @@ def setup_db():
       n_rows = row[0]
   table_exists = (n_rows == 1)
   if not table_exists:
-    logging.info("Creating table ...")
+    logging.info("Creating tables ...")
     run_ddl(ddl_t1)
+    run_ddl(ddl_t2)
     logging.info("OK")
   else:
     logging.info("text_embed table already exists")
 
 sql_inserts = """
 INSERT INTO text_embed (uri, chunk_num, chunk, embedding)
-VALUES (%(uri)s, %(chunk_num)s, %(chunk)s, %(embedding)s);
+VALUES (%(uri)s, %(chunk_num)s, %(chunk)s, %(embedding)s)
+ON CONFLICT (uri, chunk_num) DO UPDATE
+SET embedding = EXCLUDED.embedding;
 """
 
 def index_text(conn, uri, text):
@@ -128,11 +143,7 @@ def index_text(conn, uri, text):
       break
   logging.info("n_chunks = {}".format(len(s_list)))
   t0 = time.time()
-  try:
-    embed_list = list(embed_model.embed(s_list)) # Memory leaks here
-  except RuntimeException as e:
-    logging.warning(e)
-    return Response(str(e), status=500, mimetype="text/plain")
+  embed_list = list(embed_model.embed(s_list)) # Memory leaks here
   et = time.time() - t0
   logging.info("Time to generate embeddings(): {:.2f} ms".format(et * 1000))
   for i in range(0, len(s_list)):
@@ -145,25 +156,13 @@ def index_text(conn, uri, text):
     te_rows.append(row_map)
     n_chunk += 1
   t0 = time.time()
-  try:
-    with conn.cursor() as cur:
-      cur.executemany(sql_inserts, te_rows)
-    conn.commit()
-  except Exception as e:
-    return Response(str(e), status=400, mimetype="text/plain")
+  with conn.cursor() as cur:
+    cur.executemany(sql_inserts, te_rows)
+  conn.commit()
   et = time.time() - t0
   logging.info("DB INSERT time: {:.2f} ms".format(et * 1000))
-  return Response("OK", status=200, mimetype="text/plain")
-
-def index_file(in_file):
-  text = ""
-  with open(in_file, mode="rt") as f:
-    for line in f:
-      text += line
-  in_file = re.sub(r"\./", '', in_file) # Trim leading '/'
-  with pool.connection() as conn:
-    rv = index_text(conn, in_file, text)
-  return rv
+  #return Response("OK", status=200, mimetype="text/plain")
+  return n_chunk
 
 # Clean any special chars out of text
 def clean_text(text):
@@ -179,6 +178,20 @@ SELECT uri, 1 - (embedding <=> (%s)::VECTOR) sim, chunk, chunk_num
 FROM text_embed
 ORDER BY sim DESC
 LIMIT %s
+"""
+
+sql_insert_fresh = """
+INSERT INTO text_embed_freshness (uri, sha256)
+VALUES (%s, %s)
+ON CONFLICT (uri) DO UPDATE
+SET sha256 = EXCLUDED.sha256;
+"""
+
+sql_uri_fresh = "SELECT sha256 FROM text_embed_freshness WHERE uri = %s;"
+
+sql_delete_old = """
+DELETE FROM text_embed
+WHERE uri = %s AND chunk_num > %s;
 """
 
 @lru_cache(maxsize=cache_size)
@@ -205,6 +218,41 @@ def search(conn, terms, limit):
   logging.info("SQL query time: {:.2f} ms".format(et * 1000))
   return rv
 
+# Given a URL, return the SHA256 hash of a combination of its headers, or None if there was an error
+hdr_candidates = ["Last-Modified", "Content-Length", "Etag"]
+hdr_pat = re.compile('(' + '|'.join(hdr_candidates) + ')', re.IGNORECASE)
+def freshness_token(url):
+  rv = None
+  response = requests.head(url, allow_redirects=True)
+  if 200 == response.status_code:
+    hdrs = []
+    for k, v in response.headers.items():
+      if hdr_pat.match(k):
+        hdrs.append(v)
+    if len(hdrs) == 0:
+      hdrs.append(str(random.random())) # Will trigger unconditional refresh of this URL
+    rv = hashlib.sha256(",".join(hdrs).encode("utf-8")).hexdigest()
+  else:
+    logging.warning("HEAD of URL '{}' failed: {}".format(url, response.status_code))
+  return rv
+
+# Read a URL and return its text or None if there was an error
+def read_url(url):
+  rv = None
+  try:
+    response = requests.get(url)
+    response.raise_for_status()
+  except requests.RequestException as e:
+    logging.warning(f"Error fetching URL {url}: {e}\n")
+    return rv
+  soup = BeautifulSoup(response.text, 'html.parser')
+  # Remove script and style elements
+  for element in soup(['script', 'style']):
+    element.decompose()
+  rv = soup.get_text(separator=' ', strip=True)
+  return rv
+
+# Initialize Flask
 app = Flask(__name__)
 
 #
@@ -222,6 +270,45 @@ def do_search(q_base_64, limit):
     rv = search(conn, q.split(), limit)
   return Response(json.dumps(rv), status=200, mimetype="application/json")
 
+#
+# Add a new document to the index, using its URL:
+#
+#   time curl -s http://$FLASK_HOST:$FLASK_PORT/index/$( echo -n "$1" | base64 )
+#
+@app.route("/index/<url_base_64>", methods=["GET"])
+def do_index_url(url_base_64):
+  rv = Response("OK", status=200, mimetype="text/plain")
+  url = decode(url_base_64)
+  if len(url) == 0: # Empty URL value
+    return rv
+  url_sha = freshness_token(url)
+  db_sha = None
+  with pool.connection() as conn:
+    rs = conn.execute(sql_uri_fresh, (url,))
+    row = rs.fetchone()
+    if row is not None:
+      db_sha = row[0]
+  # URI there, sha256 is identical
+  logging.debug("db_sha: {}, url_sha: {}".format(db_sha, url_sha))
+  if db_sha == url_sha:
+    return rv
+  # URI not there at all or sha256 doesn't match
+  # Fetch URL and update the DB
+  txt = read_url(url)
+  with pool.connection() as conn:
+    # UPSERT that (url, url_sha) row first since there is an FK constraint
+    with conn.cursor() as cur:
+      cur.execute(sql_insert_fresh, (url, url_sha))
+    conn.commit()
+    last_chunk_num = index_text(conn, url, txt)
+    # Remove any rows where chunk_num > last_chunk_num
+    if db_sha is not None and db_sha != url_sha:
+      with conn.cursor() as cur:
+        cur.execute(sql_delete_old, (url, last_chunk_num))
+      conn.commit()
+  return rv
+
+# TODO: remove as this is not currently used
 @app.route("/index", methods=["POST"])
 def do_index():
   rv = Response("OK", status=200, mimetype="text/plain")
