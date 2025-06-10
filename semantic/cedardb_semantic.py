@@ -161,7 +161,6 @@ def index_text(conn, uri, text):
   conn.commit()
   et = time.time() - t0
   logging.info("DB INSERT time: {:.2f} ms".format(et * 1000))
-  #return Response("OK", status=200, mimetype="text/plain")
   return n_chunk
 
 # Clean any special chars out of text
@@ -176,6 +175,14 @@ def decode(b64):
 sql_search = """
 SELECT uri, 1 - (embedding <=> (%s)::VECTOR) sim, chunk, chunk_num
 FROM text_embed
+ORDER BY sim DESC
+LIMIT %s
+"""
+
+sql_constrained_search = """
+SELECT uri, 1 - (embedding <=> (%s)::VECTOR) sim, chunk, chunk_num
+FROM text_embed
+WHERE uri ~* %s
 ORDER BY sim DESC
 LIMIT %s
 """
@@ -201,13 +208,18 @@ def get_embed_for_search(query_string):
 
 # Arg: search terms
 # Returns: list of {"uri": uri, "score": sim, "token": token, "chunk": chunk}
-def search(conn, terms, limit):
+def search(conn, terms, limit, url_constraint):
   rv = []
   q = ' '.join(terms)
   embed = get_embed_for_search(q)
-  logging.info("Query string: '{}'".format(q))
+  logging.info("Query string: '{}', URL constraint: {}".format(q, url_constraint))
   t0 = time.time()
-  rs = conn.execute(sql_search, (embed.tolist(), limit))
+  rs = None
+  # FIXME: this actually slows things down considerably. Why?
+  if url_constraint is not None:
+    rs = conn.execute(sql_constrained_search, (embed.tolist(), url_constraint, limit))
+  else:
+    rs = conn.execute(sql_search, (embed.tolist(), limit))
   if rs is not None:
     for row in rs:
       (uri, sim, chunk, chunk_num) = row
@@ -256,18 +268,17 @@ def read_url(url):
 app = Flask(__name__)
 
 #
-# Search / query
-#
-# EXAMPLE (with a limit of 5 results):
+# Search (here, with a limit of 5 results):
 #
 #   curl http://localhost:18080/search/$( echo -n 'how does the CedarDB "asof join" work' | base64 )/5
 #
 @app.route("/search/<q_base_64>/<int:limit>")
-def do_search(q_base_64, limit):
+@app.route("/search/<q_base_64>/<int:limit>/<url_constraint>")
+def do_search(q_base_64, limit, url_constraint=None):
   q = decode(q_base_64)
   q = clean_text(q)
   with pool.connection() as conn:
-    rv = search(conn, q.split(), limit)
+    rv = search(conn, q.split(), limit, url_constraint)
   return Response(json.dumps(rv), status=200, mimetype="application/json")
 
 #
