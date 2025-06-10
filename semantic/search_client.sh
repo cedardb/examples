@@ -37,10 +37,18 @@ done
 # remove the options parsed from $@
 shift $((OPTIND - 1))
 
+# URL-safe Base64 encoding
+url_safe_b64()
+{
+  echo -n "$@" | $base64 | sed 's/+/-/g' | sed 's/\//_/g'
+}
+
+query_b64=$( url_safe_b64 "$@" )
 if [[ -z "$constraint" ]]
 then
-  curl -s http://$FLASK_HOST:$FLASK_PORT/search/$( echo -n "$@" | $base64 )/$max_results | jq
+  curl -s http://$FLASK_HOST:$FLASK_PORT/search/$query_b64/$max_results | jq
 else
-  curl -s http://$FLASK_HOST:$FLASK_PORT/search/$( echo -n "$@" | $base64 )/$max_results/$constraint | jq
+  constraint_b64=$( url_safe_b64 $constraint )
+  curl -s http://$FLASK_HOST:$FLASK_PORT/search/$query_b64/$max_results/$constraint_b64 | jq
 fi
 

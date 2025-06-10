@@ -169,7 +169,7 @@ def clean_text(text):
 
 # Decode a base64 encoded value to a UTF-8 string
 def decode(b64):
-  b = base64.b64decode(b64)
+  b = base64.urlsafe_b64decode(b64)
   return b.decode(CHARSET).strip()
 
 sql_search = """
@@ -272,10 +272,13 @@ app = Flask(__name__)
 #
 #   curl http://localhost:18080/search/$( echo -n 'how does the CedarDB "asof join" work' | base64 )/5
 #
-@app.route("/search/<q_base_64>/<int:limit>")
-@app.route("/search/<q_base_64>/<int:limit>/<url_constraint>")
-def do_search(q_base_64, limit, url_constraint=None):
-  q = decode(q_base_64)
+@app.route("/search/<q_b64>/<int:limit>")
+@app.route("/search/<q_b64>/<int:limit>/<url_constraint_b64>")
+def do_search(q_b64, limit, url_constraint_b64=None):
+  q = decode(q_b64)
+  url_constraint = None
+  if url_constraint_b64 is not None:
+    url_constraint = decode(url_constraint_b64)
   q = clean_text(q)
   with pool.connection() as conn:
     rv = search(conn, q.split(), limit, url_constraint)
