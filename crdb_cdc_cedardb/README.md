@@ -1,18 +1,32 @@
 # Demo showing the use of CockroachDB changefeeds (CDC) with CedarDB
 
-Offload the analytical query workload to CedarDB!
+**Offload the analytical query workload to CedarDB!**
+
+Since this demo is meant to illustrate the use of CockroachDB changefeeds, it uses the
+"MovR" demo app built into CockroachDB.  The entity relationship diagram (ERD) is shown
+below.  Here are a couple of references on these changefeeds and the MovR demo:
+
+- [MovR](https://www.cockroachlabs.com/docs/stable/movr)
+- [Cockroach Workload](https://www.cockroachlabs.com/docs/stable/cockroach-workload#movr-workload)
+- [CDC into a webhook sink](https://www.cockroachlabs.com/docs/stable/changefeed-examples#create-a-changefeed-connected-to-a-webhook-sink)
+- [GitHub repo](https://github.com/cockroachlabs/cdc-webhook-sink-test-server) for Go webhook sink which
+  was the inspiration for the code in this repo
 
 ![Movr app schema](./movr_schema.png)
 
-TODO: based on this ERD, come up with a few nice analytical queries we can run.
-
 ## CockroachDB
+
+Initialize the MovR workload, per the docs referenced above:
 
 ```bash
 cockroach workload init movr "postgresql://root@localhost:26257?sslcert=$HOME/certs/client.root.crt&sslkey=$HOME/certs/client.root.key&sslmode=verify-full&sslrootcert=$HOME/certs/ca.crt"
 ```
 
 ## CedarDB
+
+Once that schema exists, we can see what it looks like and replicate it in CedarDB.  Note the absence
+of the foreign key constraints here as the intent is to use CedarDB not as the system of record but
+as the analytical query engine.
 
 ```sql
 CREATE TABLE public.users
@@ -86,15 +100,18 @@ CREATE TABLE public.user_promo_codes
 
 ## Start the CDC webhook endpoint
 
-For the time being, [startup.sh](./startup.sh) will need to be edited to align to your
-environment.  This will all be put into Docker Compose at some point to simplify all of
-it.
+For the time being, [startup.sh](./startup.sh) **will need to be edited** to align to your
+environment.  This will all be put into Docker Compose at some point to simplify things.
 
 ```bash
 ./startup.sh
 ```
 
 ## CockroachDB
+
+This is the syntax for creating the changefeeds.  Note that, in the URLs here, there is
+an ordered list of the primary key components for each table, where the elements are
+separated by comma (`,`).
 
 ```sql
 CREATE CHANGEFEED FOR TABLE public.users
@@ -127,4 +144,11 @@ WITH updated;
 ```bash
 cockroach workload run movr "postgresql://root@localhost:26257?sslcert=$HOME/certs/client.root.crt&sslkey=$HOME/certs/client.root.key&sslmode=verify-full&sslrootcert=$HOME/certs/ca.crt"
 ```
+
+## With this app running, make some observations
+
+- We should be able to see the `SELECT COUNT(*) FROM table_name;` increasing in CedarDB for
+  each of the MovR tables.
+- **TODO:** Based on the ERD, come up with a few nice analytical queries to run.
+
 
