@@ -48,6 +48,10 @@ print("n_threads: {} (set via 'export N_THREADS=10')".format(n_threads))
 cache_size = int(os.environ.get("CACHE_SIZE", "1024"))
 print("cache_size: {} (set via 'export CACHE_SIZE=1024')".format(cache_size))
 
+# Default value for the minimum sim value, to avoid returning irrelevant results
+min_similarity = float(os.environ.get("MIN_SIMILARITY", "0.65"))
+print("min_similarity: {} (set via 'export MIN_SIMILARITY=0.65')".format(min_similarity))
+
 log_level = os.environ.get("LOG_LEVEL", "WARN").upper()
 logging.basicConfig(
   level=log_level
@@ -173,16 +177,27 @@ def decode(b64):
   return b.decode(CHARSET).strip()
 
 sql_search = """
-SELECT uri, 1 - (embedding <=> (%s)::VECTOR) sim, chunk, chunk_num
-FROM text_embed
+WITH s AS
+(
+  SELECT uri, 1 - (embedding <=> (%s)::VECTOR) sim, chunk, chunk_num
+  FROM text_embed
+)
+SELECT * FROM s
+WHERE sim >= %s
 ORDER BY sim DESC
 LIMIT %s
 """
 
 sql_constrained_search = """
-SELECT uri, 1 - (embedding <=> (%s)::VECTOR) sim, chunk, chunk_num
-FROM text_embed
-WHERE uri ~* %s
+WITH s AS
+(
+  SELECT uri, 1 - (embedding <=> (%s)::VECTOR) sim, chunk, chunk_num
+  FROM text_embed
+)
+SELECT * FROM s
+WHERE
+  uri ~* %s
+  AND sim >= %s
 ORDER BY sim DESC
 LIMIT %s
 """
@@ -217,9 +232,9 @@ def search(conn, terms, limit, url_constraint):
   rs = None
   # FIXME: this actually slows things down considerably. Why?
   if url_constraint is not None:
-    rs = conn.execute(sql_constrained_search, (embed.tolist(), url_constraint, limit))
+    rs = conn.execute(sql_constrained_search, (embed.tolist(), url_constraint, min_similarity, limit))
   else:
-    rs = conn.execute(sql_search, (embed.tolist(), limit))
+    rs = conn.execute(sql_search, (embed.tolist(), min_similarity, limit))
   if rs is not None:
     for row in rs:
       (uri, sim, chunk, chunk_num) = row

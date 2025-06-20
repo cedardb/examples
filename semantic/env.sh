@@ -9,6 +9,7 @@ export MIN_SENTENCE_LEN=8
 export TOKENIZERS_PARALLELISM=false
 export MEMORY_LIMIT_MB=6144
 export MAX_CHUNKS=128
+export MIN_SIMILARITY=0.65
 
 # For client
 export MAX_RESULTS=5
