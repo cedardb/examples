@@ -1,6 +1,6 @@
 # For server
-#export DB_URL="postgres://postgres:postgres@127.0.0.1:5432/postgres"
-export DB_URL="postgres://postgres:postgres@docker.for.mac.localhost:5432/postgres" # Running on Mac
+#export DB_URL="postgres://postgres:postgres@127.0.0.1:5432/postgres" # Linux
+export DB_URL="postgres://postgres:postgres@docker.for.mac.localhost:5432/postgres" # Mac
 export FLASK_PORT=1999
 export FLASK_HOST=localhost
 export LOG_LEVEL=INFO

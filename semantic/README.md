@@ -5,18 +5,20 @@ search over texts which are ingested via this app.
 
 ## Steps to get everything running
 
+Edit `env.sh` as required to suit your setup; the `DB_URL` line is the most likely
+value that would need to be changed.
+
 ```
 source env.sh
 ./docker_build_image.sh
-./gen_doc_blog_url_list.sh > list.txt
-for url in $( cat ./list.txt )
+for url in $( cat ./cedardb_docs_urls.txt )
 do
   ./index_url.sh $url
 done
 ./search_client.sh "Code Generation"
 ```
 
-## Index documents from the local filesystem
+## Example of indexing documents from the local filesystem
 
 * Start a simple HTTP server from within a directory containing documents you want to index:
 ```
@@ -80,9 +82,4 @@ Timing is on.
 
 Time: 13.389 ms
 ```
-
-## TODO
-
-* Finish this README
-* Consider some data sets(?)
 
