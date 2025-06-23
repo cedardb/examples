@@ -2,7 +2,6 @@
 
 import re, sys, os, time
 import logging
-import psycopg
 from psycopg_pool import ConnectionPool
 from flask import Flask, request, Response
 import json
@@ -13,11 +12,8 @@ from fastembed import TextEmbedding
 import resource, platform
 import nltk
 from functools import lru_cache
-import hashlib, hmac
+import hashlib
 import random
-
-# Attempt to catch onnxruntime exceptions
-from onnxruntime.capi.onnxruntime_pybind11_state import RuntimeException
 
 CHARSET = "utf-8"
 
