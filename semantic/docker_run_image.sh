@@ -8,7 +8,7 @@ img="$docker_id/$img_name"
 # Environment variables defined here
 . ./env.sh
 
-#docker pull $img:$tag
+docker pull $img:$tag
 
 network="--network host" # Linux
 if [[ "Darwin" == $( uname -s ) ]]
@@ -22,5 +22,4 @@ docker run -d \
   --publish $port:$FLASK_PORT \
   $network \
   $img
-# $img:$tag
 

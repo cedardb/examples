@@ -5,6 +5,24 @@ search over texts which are ingested via this app.
 
 ## Steps to get everything running
 
+
+You can either use docker compose:
+```
+docker compose up
+```
+
+Then, in a different terminal:
+```
+for url in $( cat ./cedardb_docs_urls.txt )
+do
+  ./index_url.sh $url
+done
+./search_client.sh "Code Generation"
+```
+
+Alternatively, you can start the docker container manually and 
+connect against your own local cedardb instance:
+
 Edit `env.sh` as required to suit your setup; the `DB_URL` line is the most likely
 value that would need to be changed.
 
