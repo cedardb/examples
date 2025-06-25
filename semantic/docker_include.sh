@@ -1,6 +1,5 @@
-tag=1.0
-docker_id="mgoddard"
-#arch="x86"
+tag=latest
 arch="arm"
-img_name="cedardb-semantic-$arch"
+docker_id="cedardb"
+img_name="semantic-search"
 

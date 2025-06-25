@@ -1,0 +1,39 @@
+services:
+  cedardb:
+    image: cedardb/cedardb:latest
+    container_name: cedardb
+    restart: always
+    environment:
+      CEDAR_USER: postgres
+      CEDAR_PASSWORD: postgres
+      CEDAR_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - cedardata:/var/lib/cedardb/data
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U usr -d mydatabase'"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  semantic-search:
+    image: cedardb/semantic-search:latest
+    container_name: semantic_search
+    depends_on:
+      cedardb:
+        condition: service_healthy
+    environment:
+      DB_URL: postgres://postgres:postgres@cedardb/postgres
+      FLASK_HOST: localhost
+      LOG_LEVEL: INFO
+      N_THREADS: 10
+      MIN_SENTENCE_LEN: 8
+      TOKENIZERS_PARALLELISM: false
+      MEMORY_LIMIT_MB: 6144
+      MAX_CHUNKS: 128
+      MIN_SIMILARITY: 0.65
+    ports:
+      - "1999:1999"
+volumes:
+  cedardata:
