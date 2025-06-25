@@ -15,5 +15,6 @@ then
   exit 1
 fi
 
-time curl -s http://$FLASK_HOST:$FLASK_PORT/index/$( echo -n "$1" | base64 )
+status=$( curl -s http://$FLASK_HOST:$FLASK_PORT/index/$( echo -n "$1" | base64 ) )
+echo "$1 => $status"
 
