@@ -22,6 +22,11 @@ Initialize the MovR workload, per the docs referenced above:
 cockroach workload init movr "postgresql://root@localhost:26257?sslcert=$HOME/certs/client.root.crt&sslkey=$HOME/certs/client.root.key&sslmode=verify-full&sslrootcert=$HOME/certs/ca.crt"
 ```
 
+Or, in insecure mode, which is simpler for demos:
+```bash
+cockroach workload init movr "postgresql://root@localhost:15432/movr?sslmode=disable"
+```
+
 ## CedarDB
 
 Once that schema exists, we can see what it looks like and replicate it in CedarDB.  Note the absence
