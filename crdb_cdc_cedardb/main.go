@@ -47,9 +47,9 @@ func main() {
 	if dsn == "" {
 		log.Fatal("PG_DSN must be set")
 	}
-	certFile := os.Getenv("TLS_CERT")
-	keyFile := os.Getenv("TLS_KEY")
-	if certFile == "" || keyFile == "" {
+	certStr := os.Getenv("TLS_CERT")
+	keyStr := os.Getenv("TLS_KEY")
+	if certStr == "" || keyStr == "" {
 		log.Fatal("TLS_CERT and TLS_KEY must be set")
 	}
 	fmt.Println("PG_DSN: ", dsn)
@@ -66,7 +66,9 @@ func main() {
 	mux.HandleFunc("/cdc/", webhookHandler)
 
 	// Load TLS cert
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+  certPem := []byte(certStr)
+  keyPem := []byte(keyStr)
+	cert, err := tls.X509KeyPair(certPem, keyPem)
 	if err != nil {
 		log.Fatalf("Failed to load TLS cert/key: %v", err)
 	}

@@ -17,10 +17,9 @@ yes | openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -nodes \
   -config <(cat /etc/ssl/openssl.cnf \
             <(printf "[SAN]\nsubjectAltName='DNS:localhost'"))
 
-#export PG_DSN="postgresql://postgres:postgres@localhost:5432/postgres"
-export PG_DSN="postgresql://postgres:postgres@localhost:5432/movr"
-export TLS_KEY="key.pem"
-export TLS_CERT="cert.pem"
+export PG_DSN="postgresql://postgres:postgres@localhost:5432/postgres"
+export TLS_KEY=$( cat key.pem )
+export TLS_CERT=$( cat cert.pem )
 
 EXE="./crdb_cdc_cedardb"
 

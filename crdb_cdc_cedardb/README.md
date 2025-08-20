@@ -19,18 +19,13 @@ below.  Here are a couple of references on these changefeeds and the MovR demo:
 Initialize the MovR workload, per the docs referenced above:
 
 ```bash
-cockroach workload init movr "postgresql://root@localhost:26257?sslcert=$HOME/certs/client.root.crt&sslkey=$HOME/certs/client.root.key&sslmode=verify-full&sslrootcert=$HOME/certs/ca.crt"
-```
-
-Or, in insecure mode, which is simpler for demos:
-```bash
 cockroach workload init movr "postgresql://root@localhost:15432/movr?sslmode=disable"
 ```
 
 ## CedarDB
 
 Once that schema exists, we can see what it looks like and replicate it in CedarDB.  Note the absence
-of the foreign key constraints here as the intent is to use CedarDB not as the system of record but
+of foreign key constraints here as the intent is to use CedarDB not as the system of record but
 as the analytical query engine.
 
 ```sql
@@ -118,36 +113,44 @@ This is the syntax for creating the changefeeds.  Note that, in the URLs here, t
 an ordered list of the primary key components for each table, where the elements are
 separated by comma (`,`).
 
+Enable rangefeeds, which is a prerequisite for using changefeeds:
+
+```sql
+SET CLUSTER SETTING kv.rangefeed.enabled = true;
+```
+
+Create the changefeeds:
+
 ```sql
 CREATE CHANGEFEED FOR TABLE public.users
-INTO 'webhook-https://localhost:8443/cdc/city,id?insecure_tls_skip_verify=true'
+INTO 'webhook-https://host.docker.internal:8443/cdc/city,id?insecure_tls_skip_verify=true'
 WITH updated;
 
 CREATE CHANGEFEED FOR TABLE public.vehicles
-INTO 'webhook-https://localhost:8443/cdc/city,id?insecure_tls_skip_verify=true'
+INTO 'webhook-https://host.docker.internal:8443/cdc/city,id?insecure_tls_skip_verify=true'
 WITH updated;
 
 CREATE CHANGEFEED FOR TABLE public.rides
-INTO 'webhook-https://localhost:8443/cdc/city,id?insecure_tls_skip_verify=true'
+INTO 'webhook-https://host.docker.internal:8443/cdc/city,id?insecure_tls_skip_verify=true'
 WITH updated;
 
 CREATE CHANGEFEED FOR TABLE public.vehicle_location_histories
-INTO 'webhook-https://localhost:8443/cdc/city,ride_id,timestamp?insecure_tls_skip_verify=true'
+INTO 'webhook-https://host.docker.internal:8443/cdc/city,ride_id,timestamp?insecure_tls_skip_verify=true'
 WITH updated;
 
 CREATE CHANGEFEED FOR TABLE public.promo_codes
-INTO 'webhook-https://localhost:8443/cdc/code?insecure_tls_skip_verify=true'
+INTO 'webhook-https://host.docker.internal:8443/cdc/code?insecure_tls_skip_verify=true'
 WITH updated;
 
 CREATE CHANGEFEED FOR TABLE public.user_promo_codes
-INTO 'webhook-https://localhost:8443/cdc/city,user_id,code?insecure_tls_skip_verify=true'
+INTO 'webhook-https://host.docker.internal:8443/cdc/city,user_id,code?insecure_tls_skip_verify=true'
 WITH updated;
 ```
 
 ## Start the Movr app
 
 ```bash
-cockroach workload run movr "postgresql://root@localhost:26257?sslcert=$HOME/certs/client.root.crt&sslkey=$HOME/certs/client.root.key&sslmode=verify-full&sslrootcert=$HOME/certs/ca.crt"
+cockroach workload run movr "postgresql://root@localhost:15432/movr?sslmode=disable"
 ```
 
 ## With this app running, make some observations
