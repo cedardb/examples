@@ -27,16 +27,6 @@ RUN apk add --no-cache \
       openssl \
  && update-ca-certificates
 
-# Generate a self-signed cert & key (valid 365d) at build time
-# Adjust -subj fields as needed, or remove this block if you'll mount your own certs
-RUN mkdir -p /certs \
- && openssl req -x509 -nodes -days 365 \
-      -newkey rsa:2048 \
-      -subj "/C=US/ST=State/L=City/O=Org/CN=localhost" \
-      -addext "subjectAltName = DNS:localhost.localdomain, DNS:host.docker.internal" \
-      -keyout /certs/key.pem \
-      -out /certs/cert.pem
-
 # Copy the Go binary
 COPY --from=builder /app/crdb_cdc_cedardb /usr/local/bin/crdb_cdc_cedardb
 

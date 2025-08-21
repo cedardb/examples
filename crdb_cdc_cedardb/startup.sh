@@ -12,7 +12,7 @@ EoM
 rm -f key.pem cert.pem
 yes | openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -nodes \
   -subj '/CN=localhost' \
-  -addext 'subjectAltName = DNS:localhost.localdomain, DNS:mikemac.local' \
+  -addext 'subjectAltName = DNS:localhost.localdomain, DNS:host.docker.internal' \
   -extensions SAN \
   -config <(cat /etc/ssl/openssl.cnf \
             <(printf "[SAN]\nsubjectAltName='DNS:localhost'"))
