@@ -199,11 +199,14 @@ CREATE TABLE public.order_line
 
 ## Start the CDC webhook endpoint
 
-For the time being, [startup.sh](./startup.sh) **will need to be edited** to align to your
-environment.  This will all be put into Docker Compose at some point to simplify things.
-
+* Build the Docker image:
 ```bash
-./startup.sh
+$ ./docker_build_webhook.sh
+```
+
+* Start the Docker image:
+```bash
+$ ./docker_run_webhook.sh
 ```
 
 ## CockroachDB
