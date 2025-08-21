@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # This is the CedarDB connection string corresponding to its Docker startup command:
-export PG_DSN="postgresql://postgres:postgres@localhost:5432/postgres"
+#export PG_DSN="postgresql://postgres:postgres@localhost:5432/postgres"
+export PG_DSN="postgresql://postgres:postgres@host.docker.internal:5432/postgres"
 
 # Generate SSL cert
 rm -f key.pem cert.pem
