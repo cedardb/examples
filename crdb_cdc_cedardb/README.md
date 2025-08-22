@@ -1,144 +1,179 @@
 # Demo showing the use of CockroachDB changefeeds (CDC) with CedarDB
 
-**Offload the analytical query workload to CedarDB!**
+  **Offload your analytical query workload to CedarDB!**
 
-Since this demo is meant to illustrate the use of CockroachDB changefeeds, it uses the
-TPC-C demo app built into CockroachDB.  The entity relationship diagram (ERD) is shown
-below.  Here are a couple of handy references:
+Since this demo illustrates the use of CockroachDB changefeeds to sync data to
+CedarDB, it uses the **TPC-C** _workload_ which is built into CockroachDB.  The
+TPCC-C entity relationship diagram (ERD) is shown below.  This demo is based on
+Docker, so you'll need to have that installed.
+
+Here are a couple of handy references:
 
 - [Cockroach TPC-C Workload](https://www.cockroachlabs.com/docs/stable/cockroach-workload#tpcc-workload)
 - [CDC into a webhook sink](https://www.cockroachlabs.com/docs/stable/changefeed-examples#create-a-changefeed-connected-to-a-webhook-sink)
-- [GitHub repo](https://github.com/cockroachlabs/cdc-webhook-sink-test-server) for Go webhook sink which
-  was the inspiration for the code in this repo
+- [GitHub repo](https://github.com/cockroachlabs/cdc-webhook-sink-test-server) for the Go webhook sink which
+  was the inspiration for [the code](./main.go) in this repo
 
 ![TPC-C schema](./tpcc_erd.png)
 
 ## CockroachDB
 
-Start up CockroachDB in Docker:
+- Start up CockroachDB in Docker:
 
 ```bash
 $ docker pull cockroachdb/cockroach:latest
-
 $ docker run -d --name=cockroachdb \
   -p 26257:26257 -p 8888:8080 \
   cockroachdb/cockroach:latest \
   start-single-node --insecure
 ```
 
-You can now access CockroachDB using a SQL client:
+- You can now access CockroachDB using its built-in SQL client :
 ```bash
-$ psql "postgresql://root@localhost:26257/defaultdb?sslmode=disable"
+$ docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach sql --url "postgresql://root@localhost:26257/defaultdb?sslmode=disable"
 ```
 
-Initialize the TPC-C workload, per the docs referenced above:
+- Initialize the TPC-C workload, per the docs referenced above:
 
 ```bash
-$ cockroach workload init tpcc "postgresql://root@localhost:26257/tpcc?sslmode=disable"
+$ docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach workload init tpcc "postgresql://root@localhost:26257/tpcc?sslmode=disable"
 ```
+
+This will result in IMPORT statements running for each of the 9 tables.  The post-import row
+counts can be seen by logging in via that SQL client (but using the `tpcc` database this time):
+```bash
+$ docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach sql --url "postgresql://root@localhost:26257/tpcc?sslmode=disable"
+```
+
+and then running the `SHOW TABLES` command:
+```sql
+root@localhost:26257/tpcc> show tables;
+  schema_name | table_name | type  | owner | estimated_row_count | locality
+--------------+------------+-------+-------+---------------------+-----------
+  public      | customer   | table | root  |               30000 | NULL
+  public      | district   | table | root  |                  10 | NULL
+  public      | history    | table | root  |               30000 | NULL
+  public      | item       | table | root  |              100000 | NULL
+  public      | new_order  | table | root  |                9000 | NULL
+  public      | order      | table | root  |               30000 | NULL
+  public      | order_line | table | root  |              299278 | NULL
+  public      | stock      | table | root  |              100000 | NULL
+  public      | warehouse  | table | root  |                   1 | NULL
+(9 rows)
+```
+
+Below, we'll use the row count for the `order_line` table as the signal that
+the initial replication to CedarDB is complete.
 
 ## CedarDB
 
-Start up CedarDB in Docker:
+- Start up CedarDB in Docker, setting `data_dir` to a suitable location:
 
 ```bash
 $ docker pull cedardb/cedardb
-
 $ data_dir="$HOME/CedarDB/data"
-
 $ mkdir -p $data_dir
-
 $ docker run -d --rm -p 5432:5432 \
   -v $data_dir:/var/lib/cedardb/data \
   -e CEDAR_PASSWORD=postgres \
   --name cedardb cedardb/cedardb
 ```
 
-Access CedarDB via a SQL client:
+- Access CedarDB via the `psql` client built into the Docker image:
 ```bash
-$ psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+$ docker exec -it $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 ```
 
-Once that schema exists in CockroachDB, we can see what it looks like and
-replicate it in CedarDB.  Note the absence of foreign key constraints here as
-the intent is to use CedarDB not as the system of record but as the analytical
-query engine.  Create the TPC-C schema within the `postgres` database in
-CedarDB:
+Now that the TPC-C schema exists in CockroachDB, we can see what it looks like
+and create it in CedarDB, prior to starting the CDC feeds.  Note the absence of
+foreign key constraints [here](./tpcc_ddl_cedardb.sql) as the intent is to use
+CedarDB not as the system of record but as the analytical query engine.
+
+- Create the TPC-C schema within the `postgres` database in CedarDB:
 
 ```bash
-$ psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable" < tpcc_ddl_cedardb.sql
+$ docker exec -i $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable" < tpcc_ddl_cedardb.sql
 ```
 
 ## Start the CDC webhook endpoint
 
-* Build the Docker image:
+- Build the Docker image:
 ```bash
 $ ./docker_build_webhook.sh
 ```
 
-* Start the Docker image:
+- Start the Docker image:
 ```bash
 $ ./docker_run_webhook.sh
 ```
 
 ## CockroachDB
 
-This is the syntax for creating the changefeeds.  Note that, in the URLs here,
-there is an ordered list of the primary key components for each table, where
-the elements are separated by comma (`,`).  The following commands are executed
-via a SQL client (`psql`, etc.) connected to CockroachDB.
-
-```bash
-$ psql "postgresql://root@localhost:26257/tpcc?sslmode=disable"
-```
-
-Enable rangefeeds, which is a prerequisite for using changefeeds:
+This example shows the syntax for creating the changefeeds.  Note that each of
+the URLs here includes an ordered list of the primary key components for the
+table, where the elements are separated by comma (`,`).  The actual SQL to
+create these changefeeds is input directly from the `./tpcc_changefeeds.sql`
+file in the next step.
 
 ```sql
-SET CLUSTER SETTING kv.rangefeed.enabled = true;
-```
-
-Create the changefeeds:
-
-```sql
-CREATE CHANGEFEED FOR TABLE public.warehouse
-INTO 'webhook-https://host.docker.internal:8443/cdc/w_id?insecure_tls_skip_verify=true'
-WITH updated;
-
-CREATE CHANGEFEED FOR TABLE public.district
-INTO 'webhook-https://host.docker.internal:8443/cdc/d_w_id,d_id?insecure_tls_skip_verify=true'
-WITH updated;
-
 CREATE CHANGEFEED FOR TABLE public.customer
 INTO 'webhook-https://host.docker.internal:8443/cdc/c_w_id,c_d_id,c_id?insecure_tls_skip_verify=true'
 WITH updated;
-
-CREATE CHANGEFEED FOR TABLE public.history
-INTO 'webhook-https://host.docker.internal:8443/cdc/h_w_id,rowid?insecure_tls_skip_verify=true'
-WITH updated;
-
-CREATE CHANGEFEED FOR TABLE public."order"
-INTO 'webhook-https://host.docker.internal:8443/cdc/o_w_id,o_d_id,o_id?insecure_tls_skip_verify=true'
-WITH updated;
-
-CREATE CHANGEFEED FOR TABLE public.new_order
-INTO 'webhook-https://host.docker.internal:8443/cdc/no_w_id,no_d_id,no_o_id?insecure_tls_skip_verify=true'
-WITH updated;
-
-CREATE CHANGEFEED FOR TABLE public.item
-INTO 'webhook-https://host.docker.internal:8443/cdc/i_id?insecure_tls_skip_verify=true'
-WITH updated;
-
-CREATE CHANGEFEED FOR TABLE public.stock
-INTO 'webhook-https://host.docker.internal:8443/cdc/s_w_id,s_i_id?insecure_tls_skip_verify=true'
-WITH updated;
-
-CREATE CHANGEFEED FOR TABLE public.order_line
-INTO 'webhook-https://host.docker.internal:8443/cdc/ol_w_id,ol_d_id,ol_o_id,ol_number?insecure_tls_skip_verify=true'
-WITH updated;
 ```
 
-If / when necessary, all changefeeds can be canceled using this SQL command (**don't do this now**):
+- Create the changefeeds:
+
+```bash
+$ docker exec -i $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach sql --url "postgresql://root@localhost:26257/tpcc?sslmode=disable" < tpcc_changefeeds.sql
+```
+
+That should result in output that looks like:
+```
+SET CLUSTER SETTING
+job_id
+1100416707119644673
+job_id
+1100416707138813953
+[...]
+```
+
+- For the initial load, it would be better to export CSV from CockroachDB and
+then import it into CedarDB but, for now, we'll watch the row count for the
+`order_line` table in CedarDB, waiting for it to hit that **299278** value:
+
+```bash
+$ docker exec -it $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+```
+```
+postgres=# select count(*) from order_line;
+ count
+--------
+ 197031
+(1 row)
+
+postgres=# \watch 5
+Fri Aug 22 19:45:12 2025 (every 5s)
+
+ count
+--------
+ 203926
+(1 row)
+
+[...]
+
+Fri Aug 22 19:45:22 2025 (every 5s)
+
+ count
+--------
+ 299278
+(1 row)
+
+^C
+```
+
+**Done:** we hit the target row count, CTRL-C that commannd, and move forward ...
+
+- **Note:** If/when necessary, all changefeeds can be canceled using this SQL command (**don't do this now**):
 
 ```sql
 CANCEL JOBS (
@@ -151,15 +186,17 @@ CANCEL JOBS (
 ## Start the TPC-C app
 
 ```bash
-$ cockroach workload run tpcc "postgresql://root@localhost:26257/tpcc?sslmode=disable"
+$ docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach workload run tpcc "postgresql://root@localhost:26257/tpcc?sslmode=disable"
 ```
 
 ## With this app running, make some observations
 
 - We should be able to see the `SELECT COUNT(*) FROM table_name;` increasing in CedarDB for
   each of the TPC-C tables.
+
 - Run an interesting analytical query in CockroachDB, then in CedarDB and
-  compare the results and the runtimes:
+  compare the results and the runtimes (be sure to set `\timing on` in the psql
+  client for CedarDB, so it reports the runtime):
 
 ```sql
 WITH lines AS (

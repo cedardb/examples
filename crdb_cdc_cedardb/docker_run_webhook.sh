@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This is the CedarDB connection string corresponding to its Docker startup command:
+# This is the CedarDB connection string
 #export PG_DSN="postgresql://postgres:postgres@localhost:5432/postgres"
 export PG_DSN="postgresql://postgres:postgres@host.docker.internal:5432/postgres"
 
@@ -20,5 +20,5 @@ export TLS_CERT=$( cat cert.pem )
 
 docker run -d --rm -p 8443:8443 \
   -e PG_DSN -e TLS_KEY -e TLS_CERT \
-  --name cdc-webhook "$docker_id/$img_name"
+  --name cdc-webhook $img_name
 
