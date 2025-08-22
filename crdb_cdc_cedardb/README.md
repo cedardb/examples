@@ -274,6 +274,8 @@ postgres=# select version();
 (1 row)
 ```
 
+**See if that 33.962 ms vs. 2.041s gets you thinking ...**
+
 ## When you're finished, you can clean it all up
 
 First, read over [this script](./docker_stop_all.sh).
