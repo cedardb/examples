@@ -9,6 +9,6 @@ id=$( docker ps -q --filter "ancestor=cedardb/cedardb" )
 if [ -n "$id" ] ; then docker stop $id && docker rm $id ; fi
 
 echo "Stopping webhook container ..."
-id=$( docker ps | grep "mgoddard/crdb-cdc-webhook" | awk '{print $1}' )
-if [ -n "$id" ] ; then docker stop $id && docker rm $id ; fi
+id=$( docker ps -q --filter "ancestor=crdb-cdc-webhook" )
+if [ -n "$id" ] ; then docker stop $id ; fi
 
