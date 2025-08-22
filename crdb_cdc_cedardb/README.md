@@ -229,21 +229,21 @@ LIMIT 10;
 Your results should look something like this:
 
 ```
- i_id  |          i_name          | total_qty | total_rev | avg_unit_price | avg_remote_ratio | total_stock_left | total_remote_cnt
--------+--------------------------+-----------+-----------+----------------+------------------+------------------+------------------
- 36654 | FzXEIQH0c7FD8xD          |        30 |  44378.80 |       1479.293 |            0.000 |               39 |                0
- 54211 | IQH0c7FD8xDohfcYp4y27xlV |        35 |  42686.32 |       1219.609 |            0.000 |               21 |                0
- 76188 | sPyFzXEIQH0c7FD8x        |        30 |  41807.91 |       1393.597 |            0.000 |               44 |                0
- 13317 | H0c7FD8xDohfcYp4y27xlVI1 |        35 |  39809.22 |       1137.406 |            0.000 |               19 |                0
- 71380 | 0c7FD8xDohfcYp4y27xlVI1  |        35 |  39326.28 |       1123.608 |            0.000 |               23 |                0
- 68615 | EUFjQdsPyFzXEIQH0c       |        35 |  38471.65 |       1099.190 |            0.000 |               85 |                0
- 38666 | VI1TeoqmZLaFIDQfa9an     |        45 |  38300.99 |        851.133 |            0.000 |               92 |                0
- 49780 | dsPyFzXEIQH0c7FD8xDoh    |        35 |  37906.87 |       1083.053 |            0.000 |               87 |                0
- 48364 | IQH0c7FD8xDohfcYp4y2     |        30 |  37834.50 |       1261.150 |            0.000 |               78 |                0
- 78379 | TRSt3XVr7REUFjQd         |        20 |  37379.42 |       1868.971 |            0.000 |               80 |                0
+  i_id  |          i_name          | total_qty | total_rev | avg_unit_price | avg_remote_ratio | total_stock_left | total_remote_cnt
+--------+--------------------------+-----------+-----------+----------------+------------------+------------------+-------------------
+  45974 | fYOJOyswTPZ7kjvv         |        40 |  46831.90 |       1170.798 |            0.000 |               61 |                0
+  67056 | tvqSbwTYwfYOJOyswTPZ7    |        40 |  44708.05 |       1117.701 |            0.000 |               80 |                0
+  69257 | 2rDb0qTBaVbK5Y2          |        50 |  42093.46 |        841.869 |            0.000 |               41 |                0
+  67536 | 5Y2RgFp0tvqSbwTYwfY      |        35 |  41783.13 |       1193.804 |            0.000 |               12 |                0
+  62832 | 3u5mE5z08hd2rDb0qTBaV    |        40 |  41084.49 |       1027.112 |            0.000 |               34 |                0
+  37881 | uTfo2OGjeAN2a4t          |        35 |  40625.91 |       1160.740 |            0.000 |               38 |                0
+  66932 | 2RgFp0tvqSbwTYwfYOJOyswT |        35 |  38799.01 |       1108.543 |            0.000 |               97 |                0
+  92568 | gFp0tvqSbwTYwfYOJOy      |        40 |  38135.44 |        953.386 |            0.000 |               76 |                0
+  65397 | 2OGjeAN2a4tJn3           |        35 |  37810.70 |       1080.306 |            0.000 |               89 |                0
+  43242 | 5z08hd2rDb0qTBaVbK5      |        40 |  37773.03 |        944.326 |            0.000 |               32 |                0
 (10 rows)
 
-Time: 2573.452 ms (00:02.573)
+Time: 2.041s total (execution 2.041s / network 0.000s)
 tpcc=> select version();
                                                     version
 ---------------------------------------------------------------------------------------------------------------
@@ -254,23 +254,31 @@ tpcc=> select version();
 ```
  i_id  |          i_name          | total_qty | total_rev | avg_unit_price | avg_remote_ratio | total_stock_left | total_remote_cnt
 -------+--------------------------+-----------+-----------+----------------+------------------+------------------+------------------
- 71380 | 0c7FD8xDohfcYp4y27xlVI1  |        30 |  39326.28 |       1310.876 |            0.000 |               23 |                0
- 64785 | 4y27xlVI1TeoqmZLaFIDQfa9 |        25 |  34190.48 |       1367.619 |            0.000 |               71 |                0
- 75623 | xlVI1TeoqmZLaFIDQ        |        25 |  33484.98 |       1339.399 |            0.000 |               82 |                0
- 76188 | sPyFzXEIQH0c7FD8x        |        20 |  32424.35 |       1621.218 |            0.000 |               44 |                0
- 68615 | EUFjQdsPyFzXEIQH0c       |        25 |  31745.46 |       1269.818 |            0.000 |               85 |                0
- 21678 | Vr7REUFjQdsPyFzXEIQH0c7  |        20 |  30385.89 |       1519.295 |            0.000 |               90 |                0
- 13818 | EIQH0c7FD8xDohfcYp4      |        25 |  29561.92 |       1182.477 |            0.000 |               82 |                0
- 22243 | zXEIQH0c7FD8xDohfcYp     |        35 |  29418.78 |        840.537 |            0.000 |               40 |                0
- 11983 | t3XVr7REUFjQdsPy         |        25 |  29094.34 |       1163.774 |            0.000 |               63 |                0
-  9089 | Vr7REUFjQdsPyFzX         |        15 |  28808.95 |       1920.597 |            0.000 |               62 |                0
+ 45974 | fYOJOyswTPZ7kjvv         |        40 |  46831.90 |       1170.798 |            0.000 |               61 |                0
+ 67056 | tvqSbwTYwfYOJOyswTPZ7    |        40 |  44708.05 |       1117.701 |            0.000 |               80 |                0
+ 69257 | 2rDb0qTBaVbK5Y2          |        50 |  42093.46 |        841.869 |            0.000 |               41 |                0
+ 67536 | 5Y2RgFp0tvqSbwTYwfY      |        35 |  41783.13 |       1193.804 |            0.000 |               12 |                0
+ 62832 | 3u5mE5z08hd2rDb0qTBaV    |        40 |  41084.49 |       1027.112 |            0.000 |               34 |                0
+ 37881 | uTfo2OGjeAN2a4t          |        35 |  40625.91 |       1160.740 |            0.000 |               38 |                0
+ 66932 | 2RgFp0tvqSbwTYwfYOJOyswT |        35 |  38799.01 |       1108.543 |            0.000 |               97 |                0
+ 92568 | gFp0tvqSbwTYwfYOJOy      |        40 |  38135.44 |        953.386 |            0.000 |               76 |                0
+ 65397 | 2OGjeAN2a4tJn3           |        35 |  37810.70 |       1080.306 |            0.000 |               89 |                0
+ 43242 | 5z08hd2rDb0qTBaVbK5      |        40 |  37773.03 |        944.326 |            0.000 |               32 |                0
 (10 rows)
 
-Time: 38.111 ms
+Time: 33.962 ms
 postgres=# select version();
                     version
 ------------------------------------------------
  PostgreSQL 16.3 compatible CedarDB v2025-08-20
 (1 row)
+```
+
+## When you're finished, you can clean it all up
+
+First, read over [this script](./docker_stop_all.sh).
+
+```bash
+$ ./docker_stop_all.sh
 ```
 
