@@ -154,7 +154,9 @@ job_id
 - For the initial load, it would be better to export CSV from CockroachDB and
 then import it into CedarDB but, for now, we'll watch the row count for the
 `order_line` table in CedarDB, waiting for it to hit that **299278** value
-(or whatever that line in the `SHOW TABLES` output read):
+(or whatever that line in the `SHOW TABLES` output read).  Or, you could
+monitor the [stats view](https://lennie.local:8443/stats) and wait until
+the rate drops to zero.
 
 ```bash
 docker exec -it $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
@@ -246,42 +248,44 @@ Your results should look something like this:
 ```
   i_id  |          i_name          | total_qty | total_rev | avg_unit_price | avg_remote_ratio | total_stock_left | total_remote_cnt
 --------+--------------------------+-----------+-----------+----------------+------------------+------------------+-------------------
-  45974 | fYOJOyswTPZ7kjvv         |        40 |  46831.90 |       1170.798 |            0.000 |               61 |                0
-  67056 | tvqSbwTYwfYOJOyswTPZ7    |        40 |  44708.05 |       1117.701 |            0.000 |               80 |                0
-  69257 | 2rDb0qTBaVbK5Y2          |        50 |  42093.46 |        841.869 |            0.000 |               41 |                0
-  67536 | 5Y2RgFp0tvqSbwTYwfY      |        35 |  41783.13 |       1193.804 |            0.000 |               12 |                0
-  62832 | 3u5mE5z08hd2rDb0qTBaV    |        40 |  41084.49 |       1027.112 |            0.000 |               34 |                0
-  37881 | uTfo2OGjeAN2a4t          |        35 |  40625.91 |       1160.740 |            0.000 |               38 |                0
-  66932 | 2RgFp0tvqSbwTYwfYOJOyswT |        35 |  38799.01 |       1108.543 |            0.000 |               97 |                0
-  92568 | gFp0tvqSbwTYwfYOJOy      |        40 |  38135.44 |        953.386 |            0.000 |               76 |                0
-  65397 | 2OGjeAN2a4tJn3           |        35 |  37810.70 |       1080.306 |            0.000 |               89 |                0
-  43242 | 5z08hd2rDb0qTBaVbK5      |        40 |  37773.03 |        944.326 |            0.000 |               32 |                0
+  64039 | N6wFTlnf5sdTrNw          |        55 |  44982.81 |        817.869 |            0.000 |               38 |                0
+  95060 | 6gJiov6bbvH5fcdd         |        45 |  44170.33 |        981.563 |            0.000 |               78 |                0
+  68903 | 8XdA16utobQpo4WYvtZmW34i |        40 |  43293.24 |       1082.331 |            0.000 |               25 |                0
+   2466 | XdA16utobQpo4WYv         |        40 |  42938.38 |       1073.460 |            0.000 |               77 |                0
+  31444 | CJQJrwuy1RN6wFTln        |        55 |  41911.25 |        762.023 |            0.000 |               36 |                0
+  41059 | 5fcddITZc8XdA16utobQpo   |        30 |  40545.15 |       1351.505 |            0.000 |               23 |                0
+  45763 | CJQJrwuy1RN6wFTlnf5s     |        30 |  40245.39 |       1341.513 |            0.000 |               23 |                0
+  38071 | iov6bbvH5fcddITZc8XdA    |        35 |  40211.02 |       1148.886 |            0.000 |               43 |                0
+  63751 | TZc8XdA16utobQ           |        25 |  39956.04 |       1598.242 |            0.000 |               35 |                0
+  66393 | bvH5fcddITZc8XdA16uto    |        45 |  39264.48 |        872.544 |            0.000 |               49 |                0
 (10 rows)
 
-Time: 2.041s total (execution 2.041s / network 0.000s)
-tpcc=> select version();
-                                                    version
----------------------------------------------------------------------------------------------------------------
- CockroachDB CCL v25.3.0 (aarch64-unknown-linux-gnu, built 2025/08/14 18:25:20, go1.23.7 X:nocoverageredesign)
+Time: 2.651s total (execution 2.651s / network 0.000s)
+
+root@localhost:26257/tpcc> select version();                                                                                                      
+                                                  version
+-----------------------------------------------------------------------------------------------------------
+  CockroachDB CCL v25.3.0 (x86_64-pc-linux-gnu, built 2025/08/14 18:25:15, go1.23.7 X:nocoverageredesign)
 (1 row)
 ```
 
 ```
- i_id  |          i_name          | total_qty | total_rev | avg_unit_price | avg_remote_ratio | total_stock_left | total_remote_cnt
+ i_id  |          i_name          | total_qty | total_rev | avg_unit_price | avg_remote_ratio | total_stock_left | total_remote_cnt 
 -------+--------------------------+-----------+-----------+----------------+------------------+------------------+------------------
- 45974 | fYOJOyswTPZ7kjvv         |        40 |  46831.90 |       1170.798 |            0.000 |               61 |                0
- 67056 | tvqSbwTYwfYOJOyswTPZ7    |        40 |  44708.05 |       1117.701 |            0.000 |               80 |                0
- 69257 | 2rDb0qTBaVbK5Y2          |        50 |  42093.46 |        841.869 |            0.000 |               41 |                0
- 67536 | 5Y2RgFp0tvqSbwTYwfY      |        35 |  41783.13 |       1193.804 |            0.000 |               12 |                0
- 62832 | 3u5mE5z08hd2rDb0qTBaV    |        40 |  41084.49 |       1027.112 |            0.000 |               34 |                0
- 37881 | uTfo2OGjeAN2a4t          |        35 |  40625.91 |       1160.740 |            0.000 |               38 |                0
- 66932 | 2RgFp0tvqSbwTYwfYOJOyswT |        35 |  38799.01 |       1108.543 |            0.000 |               97 |                0
- 92568 | gFp0tvqSbwTYwfYOJOy      |        40 |  38135.44 |        953.386 |            0.000 |               76 |                0
- 65397 | 2OGjeAN2a4tJn3           |        35 |  37810.70 |       1080.306 |            0.000 |               89 |                0
- 43242 | 5z08hd2rDb0qTBaVbK5      |        40 |  37773.03 |        944.326 |            0.000 |               32 |                0
+ 64039 | N6wFTlnf5sdTrNw          |        55 |  44982.81 |        817.869 |            0.000 |               38 |                0
+ 95060 | 6gJiov6bbvH5fcdd         |        45 |  44170.33 |        981.563 |            0.000 |               78 |                0
+ 68903 | 8XdA16utobQpo4WYvtZmW34i |        40 |  43293.24 |       1082.331 |            0.000 |               25 |                0
+  2466 | XdA16utobQpo4WYv         |        40 |  42938.38 |       1073.460 |            0.000 |               77 |                0
+ 31444 | CJQJrwuy1RN6wFTln        |        55 |  41911.25 |        762.023 |            0.000 |               36 |                0
+ 41059 | 5fcddITZc8XdA16utobQpo   |        30 |  40545.15 |       1351.505 |            0.000 |               23 |                0
+ 45763 | CJQJrwuy1RN6wFTlnf5s     |        30 |  40245.39 |       1341.513 |            0.000 |               23 |                0
+ 38071 | iov6bbvH5fcddITZc8XdA    |        35 |  40211.02 |       1148.886 |            0.000 |               43 |                0
+ 63751 | TZc8XdA16utobQ           |        25 |  39956.04 |       1598.242 |            0.000 |               35 |                0
+ 66393 | bvH5fcddITZc8XdA16uto    |        45 |  39264.48 |        872.544 |            0.000 |               49 |                0
 (10 rows)
 
-Time: 33.962 ms
+Time: 23.591 ms
+
 postgres=# select version();
                     version
 ------------------------------------------------
@@ -289,9 +293,9 @@ postgres=# select version();
 (1 row)
 ```
 
-**See if that 33.962 ms vs. 2.041s gets you thinking ...**
+**See if that 23.591 ms vs. 2.651 s (a factor of 112x) gets you thinking ...**
 
-## When you're finished, you can clean it all up
+## Finally, knock it all down
 
 First, read over [this script](./docker_stop_all.sh).
 
