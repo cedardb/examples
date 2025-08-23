@@ -21,31 +21,37 @@ Here are a couple of handy references:
 - Start up CockroachDB in Docker:
 
 ```bash
-$ docker pull cockroachdb/cockroach:latest
-$ docker run -d --name=cockroachdb \
+docker pull cockroachdb/cockroach:latest
+
+docker run -d --name=cockroachdb \
+  --add-host=host.docker.internal:host-gateway \
   -p 26257:26257 -p 8888:8080 \
   cockroachdb/cockroach:latest \
   start-single-node --insecure
 ```
 
 - You can now access CockroachDB using its built-in SQL client :
+
 ```bash
-$ docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach sql --url "postgresql://root@localhost:26257/defaultdb?sslmode=disable"
+docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach sql --url "postgresql://root@localhost:26257/defaultdb?sslmode=disable"
 ```
 
 - Initialize the TPC-C workload, per the docs referenced above:
 
 ```bash
-$ docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach workload init tpcc "postgresql://root@localhost:26257/tpcc?sslmode=disable"
+docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach workload init tpcc "postgresql://root@localhost:26257/tpcc?sslmode=disable"
 ```
 
 This will result in IMPORT statements running for each of the 9 tables.  The post-import row
 counts can be seen by logging in via that SQL client (but using the `tpcc` database this time):
+
 ```bash
-$ docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach sql --url "postgresql://root@localhost:26257/tpcc?sslmode=disable"
+docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach sql --url "postgresql://root@localhost:26257/tpcc?sslmode=disable"
 ```
 
-and then running the `SHOW TABLES` command:
+and then running the `SHOW TABLES` command (you may have to wait a couple of
+minutes for the stats to update):
+
 ```sql
 root@localhost:26257/tpcc> show tables;
   schema_name | table_name | type  | owner | estimated_row_count | locality
@@ -70,10 +76,14 @@ the initial replication to CedarDB is complete.
 - Start up CedarDB in Docker, setting `data_dir` to a suitable location:
 
 ```bash
-$ docker pull cedardb/cedardb
-$ data_dir="$HOME/CedarDB/data"
-$ mkdir -p $data_dir
-$ docker run -d --rm -p 5432:5432 \
+docker pull cedardb/cedardb
+
+data_dir="$HOME/CedarDB/data"
+
+mkdir -p $data_dir
+
+docker run -d --rm -p 5432:5432 \
+  --add-host=host.docker.internal:host-gateway \
   -v $data_dir:/var/lib/cedardb/data \
   -e CEDAR_PASSWORD=postgres \
   --name cedardb cedardb/cedardb
@@ -81,7 +91,7 @@ $ docker run -d --rm -p 5432:5432 \
 
 - Access CedarDB via the `psql` client built into the Docker image:
 ```bash
-$ docker exec -it $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+docker exec -it $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 ```
 
 Now that the TPC-C schema exists in CockroachDB, we can see what it looks like
@@ -92,19 +102,19 @@ CedarDB not as the system of record but as the analytical query engine.
 - Create the TPC-C schema within the `postgres` database in CedarDB:
 
 ```bash
-$ docker exec -i $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable" < tpcc_ddl_cedardb.sql
+docker exec -i $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable" < tpcc_ddl_cedardb.sql
 ```
 
 ## Start the CDC webhook endpoint
 
 - Build the Docker image:
 ```bash
-$ ./docker_build_webhook.sh
+./docker_build_webhook.sh
 ```
 
 - Start the Docker image:
 ```bash
-$ ./docker_run_webhook.sh
+./docker_run_webhook.sh
 ```
 
 ## CockroachDB
@@ -124,7 +134,7 @@ WITH updated;
 - Create the changefeeds:
 
 ```bash
-$ docker exec -i $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach sql --url "postgresql://root@localhost:26257/tpcc?sslmode=disable" < tpcc_changefeeds.sql
+docker exec -i $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach sql --url "postgresql://root@localhost:26257/tpcc?sslmode=disable" < tpcc_changefeeds.sql
 ```
 
 That should result in output that looks like:
@@ -139,10 +149,11 @@ job_id
 
 - For the initial load, it would be better to export CSV from CockroachDB and
 then import it into CedarDB but, for now, we'll watch the row count for the
-`order_line` table in CedarDB, waiting for it to hit that **299278** value:
+`order_line` table in CedarDB, waiting for it to hit that **299278** value
+(or whatever that line in the `SHOW TABLES` output read):
 
 ```bash
-$ docker exec -it $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+docker exec -it $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 ```
 ```
 postgres=# select count(*) from order_line;
@@ -186,7 +197,7 @@ CANCEL JOBS (
 ## Start the TPC-C app
 
 ```bash
-$ docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach workload run tpcc "postgresql://root@localhost:26257/tpcc?sslmode=disable"
+docker exec -it $( docker ps -q --filter "ancestor=cockroachdb/cockroach:latest" ) cockroach workload run tpcc "postgresql://root@localhost:26257/tpcc?sslmode=disable"
 ```
 
 ## With this app running, make some observations
@@ -281,6 +292,6 @@ postgres=# select version();
 First, read over [this script](./docker_stop_all.sh).
 
 ```bash
-$ ./docker_stop_all.sh
+./docker_stop_all.sh
 ```
 

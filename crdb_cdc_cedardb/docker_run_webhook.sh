@@ -19,6 +19,7 @@ export TLS_CERT=$( cat cert.pem )
 . ./docker_include.sh
 
 docker run -d --rm -p 8443:8443 \
+  --add-host=host.docker.internal:host-gateway \
   -e PG_DSN -e TLS_KEY -e TLS_CERT \
   --name cdc-webhook $img_name
 
