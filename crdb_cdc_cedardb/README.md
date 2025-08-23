@@ -117,6 +117,10 @@ docker exec -i $( docker ps -q --filter "ancestor=cedardb/cedardb" ) psql "postg
 ./docker_run_webhook.sh
 ```
 
+- Statistics for the changefeeds are available via [this endpoint](https://localhost:8443/stats).
+
+![Changefeed stats view](./changefeed_stats.png)
+
 ## CockroachDB
 
 This example shows the syntax for creating the changefeeds.  Note that each of
