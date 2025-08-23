@@ -21,6 +21,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -50,9 +51,9 @@ const (
 )
 
 type bucket struct {
-	tsSec int64  // UNIX seconds of the bucket
-	nReq  int64  // number of requests that contained this table during that second
-	nByte int64  // total request JSON bytes attributed to this table during that second
+	tsSec int64 // UNIX seconds of the bucket
+	nReq  int64 // number of requests that contained this table during that second
+	nByte int64 // total request JSON bytes attributed to this table during that second
 }
 
 type series struct {
@@ -131,11 +132,11 @@ func (ss *statsStore) snapshot(nowSec int64) []tblRow {
 		ser.mu.RUnlock()
 
 		row := tblRow{
-			Table: tbl,
-			Rate1m:  rate(acc[0].cnt, windows[0]),
-			Rate5m:  rate(acc[1].cnt, windows[1]),
-			Rate15m: rate(acc[2].cnt, windows[2]),
-			Rate1h:  rate(acc[3].cnt, windows[3]),
+			Table:     tbl,
+			Rate1m:    rate(acc[0].cnt, windows[0]),
+			Rate5m:    rate(acc[1].cnt, windows[1]),
+			Rate15m:   rate(acc[2].cnt, windows[2]),
+			Rate1h:    rate(acc[3].cnt, windows[3]),
 			AvgLen1m:  avgLen(acc[0].bytes, acc[0].cnt),
 			AvgLen5m:  avgLen(acc[1].bytes, acc[1].cnt),
 			AvgLen15m: avgLen(acc[2].bytes, acc[2].cnt),
@@ -367,14 +368,19 @@ type tblRow struct {
 func statsHandler(w http.ResponseWriter, r *http.Request) {
 	nowSec := time.Now().Unix()
 	rows := globalStats.snapshot(nowSec)
+	// Sort alphabetically by table name
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].Table < rows[j].Table
+	})
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
 	if err := statsTpl.Execute(w, rows); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
 
 var statsTpl = template.Must(template.New("stats").Funcs(template.FuncMap{
-	"f3": func(v float64) string { return fmt.Sprintf("%.3f", v) },
+	"f3":  func(v float64) string { return fmt.Sprintf("%.3f", v) },
 	"esc": html.EscapeString,
 }).Parse(`
 <!DOCTYPE html>
@@ -435,4 +441,3 @@ var statsTpl = template.Must(template.New("stats").Funcs(template.FuncMap{
 </body>
 </html>
 `))
-
