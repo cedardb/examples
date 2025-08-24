@@ -154,8 +154,8 @@ job_id
 - For the initial load, it would be better to export CSV from CockroachDB and
 then import it into CedarDB but, for now, we'll watch the row count for the
 `order_line` table in CedarDB, waiting for it to hit that **299278** value
-(or whatever that line in the `SHOW TABLES` output read).  Or, you could
-monitor the [stats view](https://lennie.local:8443/stats) and wait until
+(or whatever that line in the `SHOW TABLES` output reads).  Or, you could
+monitor the [stats view](https://localhost:8443/stats) and wait until
 the rate drops to zero.
 
 ```bash
