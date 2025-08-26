@@ -380,7 +380,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 var statsTpl = template.Must(template.New("stats").Funcs(template.FuncMap{
-	"f3":  func(v float64) string { return fmt.Sprintf("%.3f", v) },
+	"f3": func(v float64) string { return fmt.Sprintf("%.3f", v) },
 	"esc": html.EscapeString,
 }).Parse(`
 <!DOCTYPE html>
@@ -392,7 +392,11 @@ var statsTpl = template.Must(template.New("stats").Funcs(template.FuncMap{
 <meta http-equiv="refresh" content="1">
 <style>
   :root { --row-even: #ffffff; --row-odd: #f7f7f9; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 24px; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+  .container {
+    width: 80%;
+    margin: 40px auto;   /* top/bottom 40px, left/right auto (centers horizontally) */
+  }
   h1 { margin-bottom: 8px; }
   table { border-collapse: collapse; width: 100%; }
   th, td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: right; }
@@ -406,38 +410,41 @@ var statsTpl = template.Must(template.New("stats").Funcs(template.FuncMap{
 </style>
 </head>
 <body>
-  <h1>Changefeed Stats</h1>
-  <div class="sub">Averages computed over rolling windows using 1-second buckets. Rates are <b>requests per second</b> for requests that contained the table. Page auto-refreshes every second.</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Table</th>
-        <th>Req/s 1m</th>
-        <th>Req/s 5m</th>
-        <th>Req/s 15m</th>
-        <th>Req/s 1h</th>
-        <th>Avg JSON bytes 1m</th>
-        <th>Avg JSON bytes 5m</th>
-        <th>Avg JSON bytes 15m</th>
-        <th>Avg JSON bytes 1h</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{range .}}
-      <tr>
-        <td class="mono">{{esc .Table}}</td>
-        <td>{{f3 .Rate1m}}</td>
-        <td>{{f3 .Rate5m}}</td>
-        <td>{{f3 .Rate15m}}</td>
-        <td>{{f3 .Rate1h}}</td>
-        <td>{{f3 .AvgLen1m}}</td>
-        <td>{{f3 .AvgLen5m}}</td>
-        <td>{{f3 .AvgLen15m}}</td>
-        <td>{{f3 .AvgLen1h}}</td>
-      </tr>
-      {{end}}
-    </tbody>
-  </table>
+  <div class="container">
+    <h1>Changefeed Stats</h1>
+    <div class="sub">Averages computed over rolling windows using 1-second buckets. Rates are <b>requests per second</b> for requests that contained the table. Page auto-refreshes every second.</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Table</th>
+          <th>Op/s 1m</th>
+          <th>Op/s 5m</th>
+          <th>Op/s 15m</th>
+          <th>Op/s 1h</th>
+          <th>bytes 1m</th>
+          <th>bytes 5m</th>
+          <th>bytes 15m</th>
+          <th>bytes 1h</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .}}
+        <tr>
+          <td class="mono">{{esc .Table}}</td>
+          <td>{{f3 .Rate1m}}</td>
+          <td>{{f3 .Rate5m}}</td>
+          <td>{{f3 .Rate15m}}</td>
+          <td>{{f3 .Rate1h}}</td>
+          <td>{{f3 .AvgLen1m}}</td>
+          <td>{{f3 .AvgLen5m}}</td>
+          <td>{{f3 .AvgLen15m}}</td>
+          <td>{{f3 .AvgLen1h}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
 </body>
 </html>
 `))
+
