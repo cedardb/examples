@@ -1,7 +1,7 @@
 services:
   cedar:
     container_name: cedar
-    image: cedardb
+    image: cedardb/cedardb
     restart: always
     environment:
       CEDAR_DB: postgres
