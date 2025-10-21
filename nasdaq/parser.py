@@ -17,6 +17,8 @@ STOCK_DIRECTORY_ID = b'R'
 MARKET_MAKER_ID = b'L'
 
 MARKET_OPEN_TS = 34200000000000
+START_POINT = 600000000000 # 10 min after market open
+END_POINT =   4200000000000 # 1 hour of data after start point
 orderSchema = [
     "stockId",
     "timestamp",
@@ -290,21 +292,21 @@ def handleOrderReplace(pkg):
 
 def main():
     parser = argparse.ArgumentParser(description="Process a source and output directory.")
-    
+
     # Add arguments for source and output directories
     parser.add_argument("dumpFile", type=str, help="Path to the unzipped NASDAQ dump file")
     parser.add_argument("outputDir", type=str, help="Path to the output directory")
-    
+
     # Parse the command-line arguments
     args = parser.parse_args()
-    
+
     # Access the arguments
     source_file = args.dumpFile
     output_dir = args.outputDir
-        
+
     # Ensure the output directory exists (create it if needed)
     os.makedirs(output_dir, exist_ok=True)
-    
+
 
     with (open(os.path.join(output_dir, "orders.csv"), "w") as orderFile,
           open(os.path.join(output_dir, "ordersPreMarket.csv"), "w") as orderPremarketFile,
@@ -385,20 +387,26 @@ def main():
                     execution = handleTrade(pkg)
 
                 if order:
-                    if order.timestamp < MARKET_OPEN_TS:
+                    if order.timestamp < MARKET_OPEN_TS + START_POINT:
                         orderPremarketWriter.writerow(order.__dict__.values())
+                    elif order.timestamp > MARKET_OPEN_TS + END_POINT:
+                        break
                     else:
                         orderWriter.writerow(order.__dict__.values())
 
                 if execution:
-                    if execution.timestamp < MARKET_OPEN_TS:
+                    if execution.timestamp < MARKET_OPEN_TS + START_POINT:
                         executionPremarketWriter.writerow(execution.__dict__.values())
+                    elif execution.timestamp > MARKET_OPEN_TS + END_POINT:
+                        break
                     else:
                         executionWriter.writerow(execution.__dict__.values())
 
                 if cancellation:
-                    if cancellation.timestamp < MARKET_OPEN_TS:
+                    if cancellation.timestamp < MARKET_OPEN_TS + START_POINT:
                         cancellationPremarketWriter.writerow(cancellation.__dict__.values())
+                    elif cancellation.timestamp > MARKET_OPEN_TS + END_POINT:
+                        break
                     else:
                         cancellationWriter.writerow(cancellation.__dict__.values())
 

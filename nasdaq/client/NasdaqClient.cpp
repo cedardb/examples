@@ -253,7 +253,6 @@ void NasdaqClient::finalize(size_t msgCount) const
 
 void NasdaqClient::runExchange(const std::string& ordersPath, const std::string& executionsPath, const std::string& cancellationsPath) const
 {
-    uint64_t base = 34200000000000; // Market open in nanoseconds since midnight (9:30 AM)
     auto startTime = time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
 
     io::CSVReader<8, io::trim_chars<' '>, io::no_quote_escape<';'>> orderReader(ordersPath);
@@ -284,6 +283,7 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
     orderReader.read_row(order.stockId, order.timestamp, order.orderId, order.side, order.quantity, order.price, order.attribution, order.prevOrder);
     executionsReader.read_row(execution.timestamp, execution.orderId, execution.stockId, execution.quantity, execution.price);
     cancellationsReader.read_row(cancellation.timestamp, cancellation.orderId, cancellation.stockId, cancellation.quantity);
+    uint64_t base = order.timestamp; // We treat the first order after all preloaded orders as t0.
 
     while (true)
     {
