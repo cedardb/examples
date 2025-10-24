@@ -26,6 +26,22 @@ services:
       - cedar
     volumes:
       - ./grafana:/etc/grafana/provisioning
+  aichat:
+    build:
+      context: aichat
+      dockerfile: Dockerfile
+    depends_on:
+      cedar:
+        condition: service_healthy
+    environment:
+        - OPENROUTER_API_KEY={your_api_key_here}
+        - LLM_MODEL=anthropic/claude-sonnet-4.5
+        - DB_HOST=cedar
+        - DB_NAME=postgres
+        - DB_USER=postgres
+        - DB_PASSWORD=postgres
+    ports:
+      - 8080:8080
   client:
     build:
       context: client
