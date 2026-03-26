@@ -1,4 +1,10 @@
 services:
+  loader:
+    build:
+      context: loader
+      dockerfile: Dockerfile
+    volumes:
+      - data:/app/data
   cedar:
     container_name: cedar
     image: cedardb/cedardb
@@ -7,10 +13,13 @@ services:
       CEDAR_DB: postgres
       CEDAR_USER: postgres
       CEDAR_PASSWORD: postgres
+    ports:
+      - "5432:5432"
     volumes:
-      - ./data:/data
+      - data:/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
+      test:
+        ["CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
       interval: 10s
       timeout: 1s
       retries: 10
@@ -26,28 +35,17 @@ services:
       - cedar
     volumes:
       - ./grafana:/etc/grafana/provisioning
-  aichat:
-    build:
-      context: aichat
-      dockerfile: Dockerfile
-    depends_on:
-      cedar:
-        condition: service_healthy
-    environment:
-        - OPENROUTER_API_KEY={your_api_key_here}
-        - LLM_MODEL=anthropic/claude-sonnet-4.5
-        - DB_HOST=cedar
-        - DB_NAME=postgres
-        - DB_USER=postgres
-        - DB_PASSWORD=postgres
-    ports:
-      - 8080:8080
   client:
     build:
       context: client
       dockerfile: Dockerfile
     depends_on:
+      loader:
+        condition: service_completed_successfully
       cedar:
         condition: service_healthy
     volumes:
-      - .:/nasdaq
+      - data:/nasdaq/data
+
+volumes:
+  data:
