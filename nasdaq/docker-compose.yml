@@ -1,7 +1,7 @@
 services:
   loader:
     build:
-      context: loader
+      context: loader-cpp
       dockerfile: Dockerfile
     volumes:
       - data:/app/data
