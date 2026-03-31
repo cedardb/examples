@@ -5,6 +5,24 @@ services:
       dockerfile: Dockerfile
     volumes:
       - data:/app/data
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - data:/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
   cedar:
     container_name: cedar
     image: cedardb/cedardb
@@ -33,12 +51,26 @@ services:
       - 3000:3000
     depends_on:
       - cedar
+      - postgres
     volumes:
       - ./grafana:/etc/grafana/provisioning
-  client:
+  client-cedar:
     build:
       context: client
       dockerfile: Dockerfile
+    depends_on:
+      loader:
+        condition: service_completed_successfully
+      cedar:
+        condition: service_healthy
+    volumes:
+      - data:/nasdaq/data
+  client-postgres:
+    build:
+      context: client
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: postgres
     depends_on:
       loader:
         condition: service_completed_successfully
