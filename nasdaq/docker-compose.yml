@@ -47,6 +47,9 @@ services:
     restart: unless-stopped
     environment:
       - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=100ms
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
     ports:
       - 3000:3000
     depends_on:
