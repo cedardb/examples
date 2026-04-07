@@ -7,7 +7,6 @@ services:
       - data:/app/data
   postgres:
     image: postgres:17
-    container_name: postgres
     restart: unless-stopped
     cpus: 8.0
     mem_limit: 32gb
@@ -26,7 +25,6 @@ services:
       timeout: 5s
       retries: 10
   cedar:
-    container_name: cedar
     image: cedardb/cedardb
     restart: always
     cpus: 8.0
@@ -47,7 +45,6 @@ services:
       retries: 10
   grafana:
     image: grafana/grafana:12.0.0
-    container_name: grafana
     restart: unless-stopped
     environment:
       - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=100ms
@@ -61,24 +58,10 @@ services:
       - postgres
     volumes:
       - ./grafana:/etc/grafana/provisioning
-  client-cedar:
+  client:
     build:
       context: client
       dockerfile: Dockerfile
-    depends_on:
-      loader:
-        condition: service_completed_successfully
-      cedar:
-        condition: service_healthy
-    restart: unless-stopped
-    volumes:
-      - data:/nasdaq/data
-  client-postgres:
-    build:
-      context: client
-      dockerfile: Dockerfile
-    environment:
-      DB_HOST: postgres
     depends_on:
       loader:
         condition: service_completed_successfully

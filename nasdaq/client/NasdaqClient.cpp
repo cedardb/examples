@@ -245,12 +245,9 @@ void NasdaqClient::finalize(size_t msgCount) const {
 
 void NasdaqClient::runExchange(const std::string& ordersPath,
                                const std::string& executionsPath,
-                               const std::string& cancellationsPath) const {
-   auto startTime = time_point_cast<std::chrono::nanoseconds>(
-                       std::chrono::steady_clock::now())
-                       .time_since_epoch()
-                       .count();
-
+                               const std::string& cancellationsPath,
+                               std::chrono::nanoseconds::rep startTime) const {
+ 
    io::CSVReader<8, io::trim_chars<' '>, io::no_quote_escape<';'>> orderReader(
       ordersPath);
    io::CSVReader<5, io::trim_chars<' '>, io::no_quote_escape<';'>>
@@ -380,7 +377,7 @@ void NasdaqClient::runExchange(const std::string& ordersPath,
          prevTimestamp = cancellation.timestamp;
       }
 
-      std::cout << "Messages: " << counter << std::endl;
+      std::cout << "Messages [" << PQhost(conn) << "]: " << counter << std::endl;
 
       finalize(counter);
       std::this_thread::sleep_for(std::chrono::milliseconds(100));

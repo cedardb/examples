@@ -11,8 +11,12 @@ ENV DB_HOST=cedar
 ENV DB_PORT=5432
 ENV DB_USER=postgres
 ENV DB_PASSWORD=postgres
-ENV CEDAR_DATA_DIR=/data/
+ENV DB2_HOST=postgres
+ENV DB2_PORT=5432
+ENV DB2_USER=postgres
+ENV DB2_PASSWORD=postgres
+ENV DB_DATA_DIR=/data/
 ENV CLIENT_DATA_DIR=/nasdaq/data/
 
 # Start the client on container start
-CMD ["sh", "-c", "exec ./bin/NasdaqDriver \"$DB_HOST\" \"$DB_PORT\" \"$DB_USER\" \"$DB_PASSWORD\" \"$CEDAR_DATA_DIR\" \"$CLIENT_DATA_DIR\""]
+CMD ["sh", "-c", "exec ./bin/NasdaqDriver \"$DB_HOST\" \"$DB_PORT\" \"$DB_USER\" \"$DB_PASSWORD\" \"$DB2_HOST\" \"$DB2_PORT\" \"$DB2_USER\" \"$DB2_PASSWORD\" \"$DB_DATA_DIR\" \"$CLIENT_DATA_DIR\""]
