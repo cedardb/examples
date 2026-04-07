@@ -9,6 +9,8 @@ services:
     image: postgres:17
     container_name: postgres
     restart: unless-stopped
+    cpus: 8.0
+    mem_limit: 32gb
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
@@ -27,6 +29,8 @@ services:
     container_name: cedar
     image: cedardb/cedardb
     restart: always
+    cpus: 8.0
+    mem_limit: 32gb
     environment:
       CEDAR_DB: postgres
       CEDAR_USER: postgres
