@@ -66,6 +66,7 @@ services:
         condition: service_completed_successfully
       cedar:
         condition: service_healthy
+    restart: unless-stopped
     volumes:
       - data:/nasdaq/data
   client-postgres:
@@ -79,6 +80,7 @@ services:
         condition: service_completed_successfully
       cedar:
         condition: service_healthy
+    restart: unless-stopped
     volumes:
       - data:/nasdaq/data
 
