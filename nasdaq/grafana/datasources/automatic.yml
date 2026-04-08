@@ -5,6 +5,8 @@ deleteDatasources:
     orgId: 1
   - name: postgres
     orgId: 1
+  - name: prometheus
+    orgId: 1
 
 datasources:
   - name: cedar
@@ -51,5 +53,16 @@ datasources:
       postgresVersion: 1500
       sslmode: disable
       timeInterval: 10ms
+    version: 1
+    editable: true
+  - name: prometheus
+    type: prometheus
+    access: proxy
+    uid: fdl2zuq913klcd
+    orgId: 1
+    url: http://localhost:9090
+    isDefault: false
+    jsonData:
+      httpMethod: POST
     version: 1
     editable: true
