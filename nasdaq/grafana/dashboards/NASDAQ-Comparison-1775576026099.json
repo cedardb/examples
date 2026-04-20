@@ -2137,7 +2137,7 @@
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": ["500ms", "1s", "5s", "10s", "30s", "1m"]
+    "refresh_intervals": ["200ms", "500ms", "1s", "5s", "10s", "30s", "1m"]
   },
   "timezone": "utc",
   "title": "NASDAQ-Comparison",
