@@ -23,9 +23,9 @@ void NasdaqClient::connect(std::string_view host, std::string_view port,
       connectionString << "password=" << password << " ";
 
    auto str = connectionString.str();
-    conn = PQconnectdb(str.c_str());
-    if (const auto res = PQstatus(conn); res == CONNECTION_OK) {
-        PQsetNoticeProcessor(conn, noticeProcessor, nullptr);
+   conn = PQconnectdb(str.c_str());
+   if (const auto res = PQstatus(conn); res == CONNECTION_OK) {
+      PQsetNoticeProcessor(conn, noticeProcessor, nullptr);
    } else {
       throw std::runtime_error("Could not connect to database");
    }
@@ -247,7 +247,6 @@ void NasdaqClient::runExchange(const std::string& ordersPath,
                                const std::string& executionsPath,
                                const std::string& cancellationsPath,
                                std::chrono::nanoseconds::rep startTime) const {
- 
    io::CSVReader<8, io::trim_chars<' '>, io::no_quote_escape<';'>> orderReader(
       ordersPath);
    io::CSVReader<5, io::trim_chars<' '>, io::no_quote_escape<';'>>
@@ -383,6 +382,10 @@ void NasdaqClient::runExchange(const std::string& ordersPath,
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
    }
    exitPipelineMode(conn);
+}
+
+void NasdaqClient::resetDatabaseStatistics() const {
+   return exec(conn, "SELECT pg_stat_reset();");
 }
 
 void NasdaqClient::close() const noexcept { PQfinish(conn); }

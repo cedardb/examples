@@ -37,6 +37,8 @@ int main(int argc, char* argv[]) {
       std::jthread t2([&] { client2.createSchema(sqlPath + "schema.sql"); });
    }
 
+   client2.resetDatabaseStatistics();
+
    {
       std::println("--- LOADING STATIC NASDAQ DATA ---");
       std::jthread t1([&] {
