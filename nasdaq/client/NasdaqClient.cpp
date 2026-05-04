@@ -10,18 +10,8 @@
 
 static void noticeProcessor(void* /*arg*/, const char* /*message*/) {}
 
-void NasdaqClient::connect(std::string_view host, std::string_view port, std::string_view user, std::string_view password) {
-   std::stringstream connectionString;
-   if (!host.empty())
-      connectionString << "host=" << host << " ";
-   if (!port.empty())
-      connectionString << "port=" << port << " ";
-   if (!user.empty())
-      connectionString << "user=" << user << " ";
-   if (!password.empty())
-      connectionString << "password=" << password << " ";
-
-   auto str = connectionString.str();
+void NasdaqClient::connect(std::string_view connectionString) {
+   auto str = std::string(connectionString);
    conn = PQconnectdb(str.c_str());
    if (const auto res = PQstatus(conn); res == CONNECTION_OK) {
       PQsetNoticeProcessor(conn, noticeProcessor, nullptr);
