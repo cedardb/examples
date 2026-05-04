@@ -413,7 +413,7 @@ def main():
                 offset += msgLen + 2
                 msgCount += 1
                 if msgCount % 1000000 == 0:
-                    print(f"Parsed {msgCount} messages. At offset {offset}/{len(fileContent)} ({offset / len(fileContent) * 100:.2f}%)")
+                    print(f"Parsed {msgCount} messages. At offset {offset}/{len(fileContent)} ({offset / len(fileContent) * 100:.2f}%)", flush = True)
 
 
 if __name__ == '__main__':
