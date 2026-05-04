@@ -315,7 +315,7 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
          prevTimestamp = cancellation.timestamp;
       }
 
-      std::cout << "Messages: " << counter << std::endl;
+      std::cout << "[" << PQhost(conn) << "] Messages: " << counter << std::endl;
 
       finalize(counter);
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -324,7 +324,8 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
 }
 
 void NasdaqClient::close() const noexcept {
-   PQfinish(conn);
+   if (conn != nullptr)
+      PQfinish(conn);
 }
 
 NasdaqClient::~NasdaqClient() {

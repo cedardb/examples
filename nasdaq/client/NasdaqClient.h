@@ -8,7 +8,7 @@
 #include "thirdparty/csv.h"
 
 class NasdaqClient {
-   PGconn* conn;
+   PGconn* conn = nullptr;
 
    public:
    void connect(std::string_view connectionString);
