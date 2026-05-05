@@ -1,4 +1,4 @@
-FROM ubuntu:25.10
+FROM ubuntu:26.04
 
 # Install dependencies
 RUN apt-get update && apt-get install -y g++ cmake libpq-dev
