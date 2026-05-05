@@ -79,7 +79,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "fdl2zuq913klcb"
+        "uid": "${selected_data_source}"
       },
       "fieldConfig": {
         "defaults": {
@@ -195,7 +195,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "fdl2zuq913klcb"
+            "uid": "${selected_data_source}"
           },
           "editorMode": "code",
           "format": "table",
@@ -229,7 +229,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "fdl2zuq913klcb"
+        "uid": "${selected_data_source}"
       },
       "fieldConfig": {
         "defaults": {
@@ -338,7 +338,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "fdl2zuq913klcb"
+            "uid": "${selected_data_source}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -371,7 +371,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "fdl2zuq913klcb"
+        "uid": "${selected_data_source}"
       },
       "fieldConfig": {
         "defaults": {
@@ -540,9 +540,7 @@
         "footer": {
           "countRows": false,
           "fields": "",
-          "reducer": [
-            "sum"
-          ],
+          "reducer": ["sum"],
           "show": false
         },
         "showHeader": true,
@@ -558,7 +556,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "fdl2zuq913klcb"
+            "uid": "${selected_data_source}"
           },
           "editorMode": "code",
           "format": "table",
@@ -592,7 +590,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "fdl2zuq913klcb"
+        "uid": "${selected_data_source}"
       },
       "description": "",
       "fieldConfig": {
@@ -635,9 +633,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -650,7 +646,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "fdl2zuq913klcb"
+            "uid": "${selected_data_source}"
           },
           "editorMode": "code",
           "format": "table",
@@ -683,7 +679,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "fdl2zuq913klcb"
+        "uid": "${selected_data_source}"
       },
       "fieldConfig": {
         "defaults": {
@@ -724,9 +720,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -739,7 +733,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "fdl2zuq913klcb"
+            "uid": "${selected_data_source}"
           },
           "editorMode": "code",
           "format": "table",
@@ -772,7 +766,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "fdl2zuq913klcb"
+        "uid": "${selected_data_source}"
       },
       "fieldConfig": {
         "defaults": {
@@ -850,7 +844,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "fdl2zuq913klcb"
+            "uid": "${selected_data_source}"
           },
           "editorMode": "code",
           "format": "table",
@@ -883,7 +877,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "fdl2zuq913klcb"
+        "uid": "${selected_data_source}"
       },
       "fieldConfig": {
         "defaults": {
@@ -925,9 +919,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -940,7 +932,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "fdl2zuq913klcb"
+            "uid": "${selected_data_source}"
           },
           "editorMode": "code",
           "format": "table",
@@ -973,7 +965,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "fdl2zuq913klcb"
+        "uid": "${selected_data_source}"
       },
       "description": "",
       "fieldConfig": {
@@ -1016,9 +1008,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -1031,7 +1021,7 @@
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
-            "uid": "fdl2zuq913klcb"
+            "uid": "${selected_data_source}"
           },
           "editorMode": "code",
           "format": "table",
@@ -1068,12 +1058,27 @@
   "templating": {
     "list": [
       {
+        "allowCustomValue": false,
         "current": {
+          "text": "cedar",
+          "value": "fdl2zuq913klcb"
+        },
+        "label": "DB",
+        "name": "selected_data_source",
+        "options": [],
+        "query": "grafana-postgresql-datasource",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "text": ["AAPL", "FB", "TSLA"],
           "value": ["AAPL", "FB", "TSLA"]
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
-          "uid": "fdl2zuq913klcb"
+          "uid": "${selected_data_source}"
         },
         "definition": "select name from stocks",
         "description": "The stock name you want to follow (e.g., AAPL)",
@@ -1161,7 +1166,7 @@
         "current": {},
         "datasource": {
           "type": "grafana-postgresql-datasource",
-          "uid": "fdl2zuq913klcb"
+          "uid": "${selected_data_source}"
         },
         "definition": "select (extract(EPOCH from current_timestamp) - extract(EPOCH from current_date + ( max(timestamp)/(1000*1000) * interval '1 millisecond')))::integer as delay from orders o",
         "includeAll": false,
@@ -1179,14 +1184,7 @@
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": [
-      "500ms",
-      "1s",
-      "5s",
-      "10s",
-      "30s",
-      "1m"
-    ]
+    "refresh_intervals": ["500ms", "1s", "5s", "10s", "30s", "1m"]
   },
   "timezone": "utc",
   "title": "NASDAQ",
