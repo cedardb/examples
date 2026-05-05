@@ -22,17 +22,23 @@ void NasdaqClient::connect(std::string_view connectionString) {
 
 void NasdaqClient::createSchema(std::string_view schemaPath) const {
    loadFile(std::string(schemaPath));
+   std::cout << "[" << PQhost(conn) << "] Nasdaq schema created." << std::endl;
 }
 
 void NasdaqClient::loadStaticData(std::string_view stocksPath, std::string_view marketMakerPath) const {
    loadCSV("stocks", stocksPath);
+   std::cout << "[" << PQhost(conn) << "] Stocks loaded." << std::endl;
    loadCSV("marketmakers", marketMakerPath);
+   std::cout << "[" << PQhost(conn) << "] Market makers loaded." << std::endl;
 }
 
 void NasdaqClient::loadPremarketData(std::string_view ordersPath, std::string_view executionsPath, std::string_view cancellationsPath) const {
    loadCSV("orders", ordersPath);
+   std::cout << "[" << PQhost(conn) << "] Orders loaded." << std::endl;
    loadCSV("executions", executionsPath);
+   std::cout << "[" << PQhost(conn) << "] Executions loaded." << std::endl;
    loadCSV("cancellations", cancellationsPath);
+   std::cout << "[" << PQhost(conn) << "] Cancellations loaded." << std::endl;
 }
 
 void NasdaqClient::consume(PGconn* conn, size_t msgCount) {
@@ -219,9 +225,7 @@ void NasdaqClient::finalize(size_t msgCount) const {
    consume(conn, msgCount);
 }
 
-void NasdaqClient::runExchange(const std::string& ordersPath, const std::string& executionsPath, const std::string& cancellationsPath) const {
-   auto startTime = time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
-
+void NasdaqClient::runExchange(const std::string& ordersPath, const std::string& executionsPath, const std::string& cancellationsPath, uint64_t startTime) const {
    io::CSVReader<8, io::trim_chars<' '>, io::no_quote_escape<';'>> orderReader(ordersPath);
    io::CSVReader<5, io::trim_chars<' '>, io::no_quote_escape<';'>> executionsReader(executionsPath);
    io::CSVReader<4, io::trim_chars<' '>, io::no_quote_escape<';'>> cancellationsReader(cancellationsPath);

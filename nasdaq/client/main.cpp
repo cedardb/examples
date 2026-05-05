@@ -1,4 +1,5 @@
 #include "NasdaqClient.h"
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <string_view>
@@ -61,12 +62,13 @@ int main(int argc, char* argv[]) {
    }
    // Run the main exchange workload last.
    {
+      const auto startTime = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
       std::jthread exchangeThread([&] {
-         client.runExchange(dataPath + "orders.csv", dataPath + "executions.csv", dataPath + "cancellations.csv");
+         client.runExchange(dataPath + "orders.csv", dataPath + "executions.csv", dataPath + "cancellations.csv", startTime);
       });
       std::jthread exchangeThread2([&] {
          if (client2)
-            client2->runExchange(dataPath + "orders.csv", dataPath + "executions.csv", dataPath + "cancellations.csv");
+            client2->runExchange(dataPath + "orders.csv", dataPath + "executions.csv", dataPath + "cancellations.csv", startTime);
       });
    }
 

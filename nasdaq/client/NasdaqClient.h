@@ -19,7 +19,7 @@ class NasdaqClient {
 
    void loadPremarketData(std::string_view ordersPath, std::string_view executionsPath, std::string_view cancellationsPath) const;
 
-   void runExchange(const std::string& ordersPath, const std::string& executionsPath, const std::string& cancellationsPath) const;
+   void runExchange(const std::string& ordersPath, const std::string& executionsPath, const std::string& cancellationsPath, uint64_t startTime) const;
 
    void close() const noexcept;
 
