@@ -27,32 +27,22 @@ int main(int argc, char* argv[]) {
    std::string dataPath = argv[1];
    std::string serverDataPath = argv[2];
 
-   // Create the schema before loading any data.
+   // 1. Create the schema before loading any data.
+   // 2. Load static reference tables next.
+   // 3. Load premarket events before the main replay.
    {
-      std::jthread schemaThread([&] { client.createSchema(sqlPath + "schema.sql"); });
-      std::jthread schemaThread2([&] {
-         if (client2)
-            client2->createSchema(sqlPath + "schema.sql");
-      });
-   }
-   // Load static reference tables next.
-   {
-      std::jthread staticDataThread([&] { client.loadStaticData(serverDataPath + "stocks.csv", serverDataPath + "marketMakers.csv"); });
-      std::jthread staticDataThread2([&] {
-         if (client2)
-            client2->loadStaticData(serverDataPath + "stocks.csv", serverDataPath + "marketMakers.csv");
-      });
-   }
-   // Load premarket events before the main replay.
-   {
-      std::jthread premarketThread([&] {
+      std::jthread schemaThread([&] {
+         client.createSchema(sqlPath + "schema.sql");
+         client.loadStaticData(serverDataPath + "stocks.csv", serverDataPath + "marketMakers.csv");
          client.loadPremarketData(
             serverDataPath + "ordersPreMarket.csv",
             serverDataPath + "executionsPreMarket.csv",
             serverDataPath + "cancellationsPreMarket.csv");
       });
-      std::jthread premarketThread2([&] {
+      std::jthread schemaThread2([&] {
          if (client2) {
+            client2->createSchema(sqlPath + "schema.sql");
+            client2->loadStaticData(serverDataPath + "stocks.csv", serverDataPath + "marketMakers.csv");
             client2->loadPremarketData(
                serverDataPath + "ordersPreMarket.csv",
                serverDataPath + "executionsPreMarket.csv",
@@ -60,7 +50,8 @@ int main(int argc, char* argv[]) {
          }
       });
    }
-   // Run the main exchange workload last.
+
+   // 4. Run the main exchange workload last.
    {
       const auto startTime = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
       std::jthread exchangeThread([&] {
