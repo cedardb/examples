@@ -3,28 +3,53 @@ apiVersion: 1
 deleteDatasources:
   - name: cedar
     orgId: 1
+  - name: postgres
+    orgId: 1
 
 datasources:
-- name: cedar
-  type: grafana-postgresql-datasource
-  access: proxy
-  uid: fdl2zuq913klcb
-  orgId: 1
-  url: cedar:5432
-  user: postgres
-  database: postgres
-  basicAuth: false
-  secureJsonData:
-    password: postgres
-  isDefault: true
-  jsonData:
-    connMaxLifetime: 14400
+  - name: cedar
+    type: grafana-postgresql-datasource
+    access: proxy
+    uid: fdl2zuq913klcb
+    orgId: 1
+    url: cedar:5432
+    user: postgres
     database: postgres
-    maxIdleConns: 100
-    maxIdleConnsAuto: true
-    maxOpenConns: 100
-    postgresVersion: 1500
-    sslmode: disable
-    timeInterval: 10ms
-  version: 1
-  editable: true
+    basicAuth: false
+    secureJsonData:
+      password: postgres
+    isDefault: true
+    jsonData:
+      connMaxLifetime: 14400
+      database: postgres
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      maxOpenConns: 100
+      postgresVersion: 1500
+      sslmode: disable
+      timeInterval: 10ms
+    version: 1
+    editable: true
+  - name: postgres
+    type: grafana-postgresql-datasource
+    access: proxy
+    uid: fdl2zuq913klcc
+    orgId: 1
+    url: postgres:5432
+    user: postgres
+    database: postgres
+    basicAuth: false
+    secureJsonData:
+      password: postgres
+    isDefault: false
+    jsonData:
+      connMaxLifetime: 14400
+      database: postgres
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      maxOpenConns: 100
+      postgresVersion: 1500
+      sslmode: disable
+      timeInterval: 10ms
+    version: 1
+    editable: true
