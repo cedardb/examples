@@ -56,6 +56,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      DB1_CONNECTION_STRING: postgresql://postgres:postgres@cedar:5432/postgres
       DB2_CONNECTION_STRING: postgresql://postgres:postgres@postgres:5432/postgres
     volumes:
       - data:/nasdaq/data
