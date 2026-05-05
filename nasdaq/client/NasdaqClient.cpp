@@ -10,18 +10,8 @@
 
 static void noticeProcessor(void* /*arg*/, const char* /*message*/) {}
 
-void NasdaqClient::connect(std::string_view host, std::string_view port, std::string_view user, std::string_view password) {
-   std::stringstream connectionString;
-   if (!host.empty())
-      connectionString << "host=" << host << " ";
-   if (!port.empty())
-      connectionString << "port=" << port << " ";
-   if (!user.empty())
-      connectionString << "user=" << user << " ";
-   if (!password.empty())
-      connectionString << "password=" << password << " ";
-
-   auto str = connectionString.str();
+void NasdaqClient::connect(std::string_view connectionString) {
+   auto str = std::string(connectionString);
    conn = PQconnectdb(str.c_str());
    if (const auto res = PQstatus(conn); res == CONNECTION_OK) {
       PQsetNoticeProcessor(conn, noticeProcessor, nullptr);
@@ -32,17 +22,23 @@ void NasdaqClient::connect(std::string_view host, std::string_view port, std::st
 
 void NasdaqClient::createSchema(std::string_view schemaPath) const {
    loadFile(std::string(schemaPath));
+   std::cout << "[" << PQhost(conn) << "] Nasdaq schema created." << std::endl;
 }
 
 void NasdaqClient::loadStaticData(std::string_view stocksPath, std::string_view marketMakerPath) const {
    loadCSV("stocks", stocksPath);
+   std::cout << "[" << PQhost(conn) << "] Stocks loaded." << std::endl;
    loadCSV("marketmakers", marketMakerPath);
+   std::cout << "[" << PQhost(conn) << "] Market makers loaded." << std::endl;
 }
 
 void NasdaqClient::loadPremarketData(std::string_view ordersPath, std::string_view executionsPath, std::string_view cancellationsPath) const {
    loadCSV("orders", ordersPath);
+   std::cout << "[" << PQhost(conn) << "] Orders loaded." << std::endl;
    loadCSV("executions", executionsPath);
+   std::cout << "[" << PQhost(conn) << "] Executions loaded." << std::endl;
    loadCSV("cancellations", cancellationsPath);
+   std::cout << "[" << PQhost(conn) << "] Cancellations loaded." << std::endl;
 }
 
 void NasdaqClient::consume(PGconn* conn, size_t msgCount) {
@@ -229,9 +225,7 @@ void NasdaqClient::finalize(size_t msgCount) const {
    consume(conn, msgCount);
 }
 
-void NasdaqClient::runExchange(const std::string& ordersPath, const std::string& executionsPath, const std::string& cancellationsPath) const {
-   auto startTime = time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
-
+void NasdaqClient::runExchange(const std::string& ordersPath, const std::string& executionsPath, const std::string& cancellationsPath, uint64_t startTime) const {
    io::CSVReader<8, io::trim_chars<' '>, io::no_quote_escape<';'>> orderReader(ordersPath);
    io::CSVReader<5, io::trim_chars<' '>, io::no_quote_escape<';'>> executionsReader(executionsPath);
    io::CSVReader<4, io::trim_chars<' '>, io::no_quote_escape<';'>> cancellationsReader(cancellationsPath);
@@ -325,7 +319,7 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
          prevTimestamp = cancellation.timestamp;
       }
 
-      std::cout << "Messages: " << counter << std::endl;
+      std::cout << "[" << PQhost(conn) << "] Messages: " << counter << std::endl;
 
       finalize(counter);
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -334,7 +328,8 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
 }
 
 void NasdaqClient::close() const noexcept {
-   PQfinish(conn);
+   if (conn != nullptr)
+      PQfinish(conn);
 }
 
 NasdaqClient::~NasdaqClient() {

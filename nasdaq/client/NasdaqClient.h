@@ -8,10 +8,10 @@
 #include "thirdparty/csv.h"
 
 class NasdaqClient {
-   PGconn* conn;
+   PGconn* conn = nullptr;
 
    public:
-   void connect(std::string_view host, std::string_view port, std::string_view user, std::string_view password);
+   void connect(std::string_view connectionString);
 
    void createSchema(std::string_view schemaPath) const;
 
@@ -19,7 +19,7 @@ class NasdaqClient {
 
    void loadPremarketData(std::string_view ordersPath, std::string_view executionsPath, std::string_view cancellationsPath) const;
 
-   void runExchange(const std::string& ordersPath, const std::string& executionsPath, const std::string& cancellationsPath) const;
+   void runExchange(const std::string& ordersPath, const std::string& executionsPath, const std::string& cancellationsPath, uint64_t startTime) const;
 
    void close() const noexcept;
 

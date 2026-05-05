@@ -1,0 +1,65 @@
+services:
+  cedar:
+    image: cedardb/cedardb
+    restart: unless-stopped
+    environment:
+      CEDAR_DB: postgres
+      CEDAR_USER: postgres
+      CEDAR_PASSWORD: postgres
+    volumes:
+      - data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432" ]
+      interval: 10s
+      timeout: 1s
+      retries: 10
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  grafana:
+    image: grafana/grafana:12.0.0
+    restart: unless-stopped
+    environment:
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=100ms
+    ports:
+      - 3000:3000
+    depends_on:
+      - cedar
+    volumes:
+      - ./grafana:/etc/grafana/provisioning
+  parser:
+    build:
+      context: parser
+      dockerfile: Dockerfile
+    volumes:
+      - data:/app/data
+  client:
+    build:
+      context: client
+      dockerfile: Dockerfile
+    depends_on:
+      cedar:
+        condition: service_healthy
+      parser:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      DB1_CONNECTION_STRING: postgresql://postgres:postgres@cedar:5432/postgres
+      DB2_CONNECTION_STRING: postgresql://postgres:postgres@postgres:5432/postgres
+    volumes:
+      - data:/nasdaq/data
+
+volumes:
+  data:
