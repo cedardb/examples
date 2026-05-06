@@ -1,1194 +1,1514 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_CEDAR",
-      "label": "cedar",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "grafana-postgresql-datasource",
-      "pluginName": "PostgreSQL"
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "edll9t2tw29dsc",
+    "namespace": "default",
+    "uid": "2483d659-e75f-4446-a846-960e947f0f6f",
+    "resourceVersion": "1778062105869019",
+    "generation": 1,
+    "creationTimestamp": "2026-05-06T10:01:04Z",
+    "labels": {
+      "grafana.app/deprecatedInternalID": "2827630157094912"
+    },
+    "annotations": {
+      "grafana.app/createdBy": "access-policy:service",
+      "grafana.app/folder": "",
+      "grafana.app/managedBy": "classic-file-provisioning",
+      "grafana.app/managerAllowsEdits": "true",
+      "grafana.app/managerId": "cedar",
+      "grafana.app/saved-from-ui": "Grafana v13.1.0-25410206825 (1a416ef1)",
+      "grafana.app/sourceChecksum": "187b990afde845b5e22df74183cb0215",
+      "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/NASDAQ-1732292249298.json",
+      "grafana.app/sourceTimestamp": "1777977161000",
+      "grafana.app/updatedBy": "anonymous:0",
+      "grafana.app/updatedTimestamp": "2026-05-06T10:08:25Z"
     }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "panel",
-      "id": "barchart",
-      "name": "Bar chart",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "candlestick",
-      "name": "Candlestick",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "gauge",
-      "name": "Gauge",
-      "version": ""
-    },
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.3.1"
-    },
-    {
-      "type": "datasource",
-      "id": "grafana-postgresql-datasource",
-      "name": "PostgreSQL",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "trend",
-      "name": "Trend",
-      "version": ""
-    }
-  ],
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
   },
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": null,
-  "links": [],
-  "panels": [
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${selected_data_source}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana",
+            "version": "v0",
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "spec": {}
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "stepBefore",
-            "lineStyle": {
-              "fill": "solid"
-            },
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "builtIn": true
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "id": 1,
+          "title": "Executed Orders",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${selected_data_source}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "select s.name, count(*) from executions e, stocks s \r\nwhere e.stockId = s.stockId \r\nand e.timestamp >= (${__from:date:seconds} - extract(epoch from current_date)) * 1000 * 1000 * 1000\r\nand e.timestamp < (${__to:date:seconds} - extract(epoch from current_date)) * 1000 * 1000 * 1000\r\ngroup by s.name order by count desc limit 10;",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "timeShift": "${timeOffset}s",
+                "interval": "200ms",
+                "hideTimeOverride": true
+              }
             }
           },
-          "decimals": 2,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "price"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyUSD"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sum"
-            },
-            "properties": [
-              {
-                "id": "decimals",
-                "value": 0
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "hideTimeOverride": true,
-      "id": 21,
-      "interval": "100ms",
-      "maxPerRow": 6,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.3.1",
-      "repeat": "stock",
-      "repeatDirection": "h",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${selected_data_source}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "with orderdepth as ( \r\n    select price, side, sum(quantity) as quantity\r\n    from orderbook o, stocks s \r\n    where o.stockId = s.stockId\r\n    and s.name in (${stock})\r\n    group by price, side\r\n),\r\ncumulative_sell as (\r\n    select price, side as metric, sum(quantity) over (order by price asc) as sum\r\n    from orderdepth\r\n    where quantity > 0\r\n    and side = 'SELL'\r\n),\r\ncumulative_buy as (\r\n    select price, side as metric, sum(quantity) over (order by price desc) as sum\r\n    from orderdepth\r\n    where quantity > 0\r\n    and side = 'BUY'\r\n),\r\ncumulative as (\r\n    select * from cumulative_sell where sum > 0 and price < ${width} * (select min(price) from cumulative_sell)\r\n    union all\r\n    select * from cumulative_buy where sum > 0 and price > 1::numeric/${width} * (select max(price) from cumulative_buy)\r\n)\r\nselect * from cumulative order by price asc;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "timeShift": "${timeOffset}s",
-      "title": "Order book depth for ${stock}",
-      "type": "trend"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${selected_data_source}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "decimals": 4,
-          "fieldMinMax": false,
-          "mappings": [],
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "currencyUSD"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "volume"
-            },
-            "properties": [
-              {
-                "id": "decimals"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 24,
-        "x": 0,
-        "y": 6
-      },
-      "hideTimeOverride": true,
-      "id": 32,
-      "interval": "1s",
-      "maxPerRow": 6,
-      "options": {
-        "candleStyle": "candles",
-        "colorStrategy": "open-close",
-        "colors": {
-          "down": "red",
-          "up": "green"
-        },
-        "includeAllFields": false,
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "mode": "candles+volume",
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.3.1",
-      "repeat": "stock",
-      "repeatDirection": "h",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${selected_data_source}"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "with limits as (\r\n    select 34200000000000::bigint as start, -- from 9:30 AM, start of trading day\r\n    (${__to:date:seconds} - extract(epoch from current_date))::bigint * 1000 * 1000 * 1000 as end, -- to current point in time\r\n    ${bins}::bigint * 1000 * 1000 as step\r\n), bins as (\r\n    -- we always generate the bins from the start of the trading day so they are stable\r\n    select generate_series(l.start ,l.end, l.step) as time\r\n    from limits l \r\n),\r\nprices as (\r\n  --for any order of a given stock executed within the relevant time span, find the price\r\n  select \r\n    e.timestamp as time, s.name as metric, \r\n    -- if the execution itself has a price, it takes precedence\r\n    max(coalesce(e.price, o.price)) as value,\r\n    max(coalesce(e.price, o.price) * e.quantity) as volume\r\nfrom executions e, stocks s, orders o, limits l\r\n  where e.orderid = o.orderid\r\nand o.stockid = s.stockid \r\nand s.name in (${stock})\r\n    and e.timestamp >= l.start\r\n    and e.timestamp < l.end\r\n  group by e.timestamp, s.name\r\n),\r\nbinned as (\r\n  select \r\nextract(epoch from current_date + (b.time/(1000*1000) * interval '1 millisecond')) as time,\r\np.metric, \r\nfirst_value(p.value) over w as open,\r\nlast_value(p.value) over w as close,\r\nmax(p.value) over w as high,\r\nmin(p.value) over w as low,\r\nsum(p.volume) over w as volume,\r\nrow_number() over w as rn\r\n  from prices p, bins b, limits l\r\n  --assign each event into its bin\r\n  where p.time >= b.time and p.time < b.time + l.step\r\n  --for each bin, find the candlestick parameters with a window function\r\n  window w as (partition by b.time, p.metric order by p.time asc rows between unbounded preceding and unbounded following)\r\n)\r\nselect metric, time, open, close, high, low, volume \r\nfrom binned b\r\nwhere rn = 1\r\norder by time asc;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "timeShift": "${timeOffset}s",
-      "title": "${stock}",
-      "type": "candlestick"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${selected_data_source}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "fieldMinMax": true,
-          "mappings": [
-            {
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "barchart",
+            "version": "13.1.0-25410206825",
+            "spec": {
               "options": {
-                "BUY": {
-                  "color": "green",
-                  "index": 1,
-                  "text": "BUY"
+                "barRadius": 0,
+                "barWidth": 0.72,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "right",
+                  "showLegend": false
                 },
-                "SELL": {
-                  "color": "red",
-                  "index": 0,
-                  "text": "SELL"
-                }
+                "orientation": "horizontal",
+                "showValue": "never",
+                "stacking": "none",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
               },
-              "type": "value"
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "thresholds": {
+                    "mode": "percentage",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "fillOpacity": 80,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 1,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "line"
+                    }
+                  },
+                  "fieldMinMax": false
+                },
+                "overrides": []
+              }
             }
-          ],
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 50
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
           }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "price"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyUSD"
-              },
-              {
-                "id": "decimals",
-                "value": 4
-              },
-              {
-                "id": "custom.width",
-                "value": 91
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "volume"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyUSD"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "side"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
+        }
+      },
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "id": 10,
+          "title": "Canceled",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${selected_data_source}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "select count(*) / 1 as canceled\r\nfrom  cancellations c \r\nwhere c.timestamp > (select max(e.timestamp) from executions e) - 1::bigint * 1000 * 1000 * 1000;",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
                 }
-              },
-              {
-                "id": "custom.width",
-                "value": 73
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "timeShift": "${timeOffset}s",
+                "interval": "200ms",
+                "hideTimeOverride": true
               }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "volume"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "mode": "basic",
-                  "type": "gauge",
-                  "valueDisplayMode": "color"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "time"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 165
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 90
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "quantity"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 75
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 9,
-        "x": 0,
-        "y": 13
-      },
-      "hideTimeOverride": true,
-      "id": 13,
-      "interval": "200ms",
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": ["sum"],
-          "show": false
-        },
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": false,
-            "displayName": "volume"
-          }
-        ]
-      },
-      "pluginVersion": "11.3.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${selected_data_source}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "select EXTRACT(EPOCH FROM current_date + (e.timestamp/(1000*1000) * interval '1 millisecond')) as time, s.name, o.side, e.quantity, coalesce(e.price, o.price) as price, e.quantity * coalesce(e.price, o.price) as volume \r\nfrom executions e, stocks s, orders o \r\nwhere e.orderid = o.orderid and o.stockid = s.stockid\r\nand e.timestamp >= (${__from:date:seconds} - extract(epoch from current_date)) * 1000 * 1000 * 1000\r\nand e.timestamp < (${__to:date:seconds} - extract(epoch from current_date)) * 1000 * 1000 * 1000\r\norder by volume desc\r\nlimit 100;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "timeShift": "${timeOffset}s",
-      "title": "100 biggest trades in current time range",
-      "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${selected_data_source}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-GrYlRd"
-          },
-          "fieldMinMax": false,
-          "mappings": [],
-          "max": 10000,
-          "min": 0,
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "eps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 3,
-        "x": 9,
-        "y": 13
-      },
-      "hideTimeOverride": true,
-      "id": 8,
-      "interval": "200ms",
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "11.3.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${selected_data_source}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "select count(*) / 1 as new\r\nfrom  orders o \r\nwhere prevOrder is null\r\nand o.timestamp > (select max(e.timestamp) from executions e) - 1::bigint * 1000 * 1000 * 1000;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "timeShift": "${timeOffset}s",
-      "title": "New",
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${selected_data_source}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-GrYlRd"
-          },
-          "mappings": [],
-          "max": 1000,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "eps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 3,
-        "x": 12,
-        "y": 13
-      },
-      "hideTimeOverride": true,
-      "id": 9,
-      "interval": "200ms",
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "11.3.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${selected_data_source}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "select count(*) / 1 as executed\r\nfrom  executions e \r\nwhere e.timestamp > (select max(e2.timestamp) from executions e2) - 1::bigint * 1000 * 1000 * 1000;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "timeShift": "${timeOffset}s",
-      "title": "Executed",
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${selected_data_source}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineWidth": 1,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "thresholdsStyle": {
-              "mode": "line"
             }
           },
-          "fieldMinMax": false,
-          "mappings": [],
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 9,
-        "x": 15,
-        "y": 13
-      },
-      "hideTimeOverride": true,
-      "id": 1,
-      "interval": "200ms",
-      "options": {
-        "barRadius": 0,
-        "barWidth": 0.72,
-        "fullHighlight": false,
-        "groupWidth": 0.7,
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": false
-        },
-        "orientation": "horizontal",
-        "showValue": "never",
-        "stacking": "none",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
-      },
-      "pluginVersion": "11.3.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${selected_data_source}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "select s.name, count(*) from executions e, stocks s \r\nwhere e.stockId = s.stockId \r\nand e.timestamp >= (${__from:date:seconds} - extract(epoch from current_date)) * 1000 * 1000 * 1000\r\nand e.timestamp < (${__to:date:seconds} - extract(epoch from current_date)) * 1000 * 1000 * 1000\r\ngroup by s.name order by count desc limit 10;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "gauge",
+            "version": "13.1.0-25410206825",
+            "spec": {
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.5,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": false
                 },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "timeShift": "${timeOffset}s",
-      "title": "Executed Orders",
-      "type": "barchart"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${selected_data_source}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-GrYlRd"
-          },
-          "fieldMinMax": true,
-          "mappings": [],
-          "max": 10000,
-          "min": 0,
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": ["lastNotNull"],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": false,
+                "sizing": "auto",
+                "sparkline": false,
+                "textMode": "auto"
               },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "eps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 3,
-        "x": 9,
-        "y": 18
-      },
-      "hideTimeOverride": true,
-      "id": 10,
-      "interval": "200ms",
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "11.3.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${selected_data_source}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "select count(*) / 1 as canceled\r\nfrom  cancellations c \r\nwhere c.timestamp > (select max(e.timestamp) from executions e) - 1::bigint * 1000 * 1000 * 1000;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "eps",
+                  "min": 0,
+                  "max": 10000,
+                  "thresholds": {
+                    "mode": "percentage",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "continuous-GrYlRd"
+                  },
+                  "fieldMinMax": true
                 },
-                "type": "groupBy"
+                "overrides": []
               }
-            ],
-            "limit": 50
+            }
           }
         }
-      ],
-      "timeShift": "${timeOffset}s",
-      "title": "Canceled",
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${selected_data_source}"
       },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-GrYlRd"
+      "panel-13": {
+        "kind": "Panel",
+        "spec": {
+          "id": 13,
+          "title": "100 biggest trades in current time range",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${selected_data_source}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "select EXTRACT(EPOCH FROM current_date + (e.timestamp/(1000*1000) * interval '1 millisecond')) as time, s.name, o.side, e.quantity, coalesce(e.price, o.price) as price, e.quantity * coalesce(e.price, o.price) as volume \r\nfrom executions e, stocks s, orders o \r\nwhere e.orderid = o.orderid and o.stockid = s.stockid\r\nand e.timestamp >= (${__from:date:seconds} - extract(epoch from current_date)) * 1000 * 1000 * 1000\r\nand e.timestamp < (${__to:date:seconds} - extract(epoch from current_date)) * 1000 * 1000 * 1000\r\norder by volume desc\r\nlimit 100;",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "timeShift": "${timeOffset}s",
+                "interval": "200ms",
+                "hideTimeOverride": true
+              }
+            }
           },
-          "fieldMinMax": false,
-          "mappings": [],
-          "max": 5000,
-          "min": 0,
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.1.0-25410206825",
+            "spec": {
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": false,
+                    "displayName": "volume"
+                  }
+                ]
               },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "eps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 3,
-        "x": 12,
-        "y": 18
-      },
-      "hideTimeOverride": true,
-      "id": 17,
-      "interval": "200ms",
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "11.3.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${selected_data_source}"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "select count(*) / 1 as new\r\nfrom  orders o \r\nwhere prevOrder is not null\r\nand o.timestamp > (select max(e.timestamp) from executions e) - 1::bigint * 1000 * 1000 * 1000;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
+              "fieldConfig": {
+                "defaults": {
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "BUY": {
+                          "text": "BUY",
+                          "color": "green",
+                          "index": 1
+                        },
+                        "SELL": {
+                          "text": "SELL",
+                          "color": "red",
+                          "index": 0
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "percentage",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 50,
+                        "color": "#EAB839"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "fieldMinMax": true
                 },
-                "type": "groupBy"
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "price"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "currencyUSD"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 4
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 91
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "volume"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "currencyUSD"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "side"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 73
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "volume"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "gauge",
+                          "valueDisplayMode": "color"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "time"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 165
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "name"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "quantity"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 75
+                      }
+                    ]
+                  }
+                ]
               }
-            ],
-            "limit": 50
+            }
           }
         }
-      ],
-      "timeShift": "${timeOffset}s",
-      "title": "Updated",
-      "type": "gauge"
-    }
-  ],
-  "refresh": "auto",
-  "schemaVersion": 40,
-  "tags": [],
-  "templating": {
-    "list": [
+      },
+      "panel-17": {
+        "kind": "Panel",
+        "spec": {
+          "id": 17,
+          "title": "Updated",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${selected_data_source}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "select count(*) / 1 as new\r\nfrom  orders o \r\nwhere prevOrder is not null\r\nand o.timestamp > (select max(e.timestamp) from executions e) - 1::bigint * 1000 * 1000 * 1000;",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "timeShift": "${timeOffset}s",
+                "interval": "200ms",
+                "hideTimeOverride": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "gauge",
+            "version": "13.1.0-25410206825",
+            "spec": {
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.5,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": false
+                },
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": ["lastNotNull"],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": false,
+                "sizing": "auto",
+                "sparkline": false,
+                "textMode": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "eps",
+                  "min": 0,
+                  "max": 5000,
+                  "thresholds": {
+                    "mode": "percentage",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "continuous-GrYlRd"
+                  },
+                  "fieldMinMax": false
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-21": {
+        "kind": "Panel",
+        "spec": {
+          "id": 21,
+          "title": "Order book depth for ${stock}",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${selected_data_source}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "with orderdepth as ( \r\n    select price, side, sum(quantity) as quantity\r\n    from orderbook o, stocks s \r\n    where o.stockId = s.stockId\r\n    and s.name in ('${stock}')\r\n    group by price, side\r\n),\r\ncumulative_sell as (\r\n    select price, side as metric, sum(quantity) over (order by price asc) as sum\r\n    from orderdepth\r\n    where quantity > 0\r\n    and side = 'SELL'\r\n),\r\ncumulative_buy as (\r\n    select price, side as metric, sum(quantity) over (order by price desc) as sum\r\n    from orderdepth\r\n    where quantity > 0\r\n    and side = 'BUY'\r\n),\r\ncumulative as (\r\n    select * from cumulative_sell where sum > 0 and price < ${width} * (select min(price) from cumulative_sell)\r\n    union all\r\n    select * from cumulative_buy where sum > 0 and price > 1::numeric/${width} * (select max(price) from cumulative_buy)\r\n)\r\nselect * from cumulative order by price asc;",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "timeShift": "${timeOffset}s",
+                "interval": "100ms",
+                "hideTimeOverride": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "trend",
+            "version": "13.1.0-25410206825",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "stepBefore",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "price"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "currencyUSD"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "sum"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-32": {
+        "kind": "Panel",
+        "spec": {
+          "id": 32,
+          "title": "${stock}",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${selected_data_source}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "time_series",
+                        "rawQuery": true,
+                        "rawSql": "with limits as (\r\n    select 34200000000000::bigint as start, -- from 9:30 AM, start of trading day\r\n    (${__to:date:seconds} - extract(epoch from current_date))::bigint * 1000 * 1000 * 1000 as end, -- to current point in time\r\n    ${bins}::bigint * 1000 * 1000 as step\r\n), bins as (\r\n    -- we always generate the bins from the start of the trading day so they are stable\r\n    select generate_series(l.start ,l.end, l.step) as time\r\n    from limits l \r\n),\r\nprices as (\r\n  --for any order of a given stock executed within the relevant time span, find the price\r\n  select \r\n    e.timestamp as time, s.name as metric, \r\n    -- if the execution itself has a price, it takes precedence\r\n    max(coalesce(e.price, o.price)) as value,\r\n    max(coalesce(e.price, o.price) * e.quantity) as volume\r\nfrom executions e, stocks s, orders o, limits l\r\n  where e.orderid = o.orderid\r\nand o.stockid = s.stockid \r\nand s.name in ('${stock}')\r\n    and e.timestamp >= l.start\r\n    and e.timestamp < l.end\r\n  group by e.timestamp, s.name\r\n),\r\nbinned as (\r\n  select \r\nextract(epoch from current_date + (b.time/(1000*1000) * interval '1 millisecond')) as time,\r\np.metric, \r\nfirst_value(p.value) over w as open,\r\nlast_value(p.value) over w as close,\r\nmax(p.value) over w as high,\r\nmin(p.value) over w as low,\r\nsum(p.volume) over w as volume,\r\nrow_number() over w as rn\r\n  from prices p, bins b, limits l\r\n  --assign each event into its bin\r\n  where p.time >= b.time and p.time < b.time + l.step\r\n  --for each bin, find the candlestick parameters with a window function\r\n  window w as (partition by b.time, p.metric order by p.time asc rows between unbounded preceding and unbounded following)\r\n)\r\nselect metric, time, open, close, high, low, volume \r\nfrom binned b\r\nwhere rn = 1\r\norder by time asc;",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "timeShift": "${timeOffset}s",
+                "interval": "1s",
+                "hideTimeOverride": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "candlestick",
+            "version": "13.1.0-25410206825",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "candleStyle": "candles",
+                "colorStrategy": "open-close",
+                "colors": {
+                  "down": "red",
+                  "up": "green"
+                },
+                "includeAllFields": false,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "mode": "candles+volume",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "currencyUSD",
+                  "decimals": 4,
+                  "thresholds": {
+                    "mode": "percentage",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "fieldMinMax": false
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "volume"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "New",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${selected_data_source}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "select count(*) / 1 as new\r\nfrom  orders o \r\nwhere prevOrder is null\r\nand o.timestamp > (select max(e.timestamp) from executions e) - 1::bigint * 1000 * 1000 * 1000;",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "timeShift": "${timeOffset}s",
+                "interval": "200ms",
+                "hideTimeOverride": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "gauge",
+            "version": "13.1.0-25410206825",
+            "spec": {
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.5,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": false
+                },
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": ["lastNotNull"],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": false,
+                "sizing": "auto",
+                "sparkline": false,
+                "textMode": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "eps",
+                  "min": 0,
+                  "max": 10000,
+                  "thresholds": {
+                    "mode": "percentage",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "continuous-GrYlRd"
+                  },
+                  "fieldMinMax": false
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9,
+          "title": "Executed",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-postgresql-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${selected_data_source}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "format": "table",
+                        "rawQuery": true,
+                        "rawSql": "select count(*) / 1 as executed\r\nfrom  executions e \r\nwhere e.timestamp > (select max(e2.timestamp) from executions e2) - 1::bigint * 1000 * 1000 * 1000;",
+                        "sql": {
+                          "columns": [
+                            {
+                              "parameters": [],
+                              "type": "function"
+                            }
+                          ],
+                          "groupBy": [
+                            {
+                              "property": {
+                                "type": "string"
+                              },
+                              "type": "groupBy"
+                            }
+                          ],
+                          "limit": 50
+                        }
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "timeShift": "${timeOffset}s",
+                "interval": "200ms",
+                "hideTimeOverride": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "gauge",
+            "version": "13.1.0-25410206825",
+            "spec": {
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.5,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": false
+                },
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": ["lastNotNull"],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": false,
+                "sizing": "auto",
+                "sparkline": false,
+                "textMode": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "eps",
+                  "min": 0,
+                  "max": 1000,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "continuous-GrYlRd"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 6,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-21"
+              },
+              "repeat": {
+                "mode": "variable",
+                "value": "stock",
+                "direction": "h",
+                "maxPerRow": 6
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 6,
+              "width": 24,
+              "height": 7,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-32"
+              },
+              "repeat": {
+                "mode": "variable",
+                "value": "stock",
+                "direction": "h",
+                "maxPerRow": 6
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 13,
+              "width": 9,
+              "height": 10,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-13"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 9,
+              "y": 13,
+              "width": 3,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-8"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 12,
+              "y": 13,
+              "width": 3,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-9"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 15,
+              "y": 13,
+              "width": 9,
+              "height": 10,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 9,
+              "y": 18,
+              "width": 3,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-10"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 12,
+              "y": 18,
+              "width": 3,
+              "height": 5,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-17"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [],
+    "timeSettings": {
+      "timezone": "utc",
+      "from": "now-15m",
+      "to": "now",
+      "autoRefresh": "auto",
+      "autoRefreshIntervals": ["500ms", "1s", "5s", "10s", "30s", "1m"],
+      "hideTimepicker": false,
+      "fiscalYearStartMonth": 0
+    },
+    "title": "NASDAQ",
+    "variables": [
       {
-        "allowCustomValue": false,
-        "current": {
-          "text": "cedar",
-          "value": "fdl2zuq913klcb"
-        },
-        "label": "DB",
-        "name": "selected_data_source",
-        "options": [],
-        "query": "grafana-postgresql-datasource",
-        "refresh": 1,
-        "regex": "",
-        "type": "datasource"
+        "kind": "DatasourceVariable",
+        "spec": {
+          "name": "selected_data_source",
+          "pluginId": "grafana-postgresql-datasource",
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "current": {
+            "text": "cedar",
+            "value": "fdl2zuq913klcb"
+          },
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "label": "DB",
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "allowCustomValue": false
+        }
       },
       {
-        "current": {
-          "text": ["AAPL", "FB", "TSLA"],
-          "value": ["AAPL", "FB", "TSLA"]
-        },
-        "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "${selected_data_source}"
-        },
-        "definition": "select name from stocks",
-        "description": "The stock name you want to follow (e.g., AAPL)",
-        "includeAll": false,
-        "label": "Stock",
-        "multi": true,
-        "name": "stock",
-        "options": [],
-        "query": "select name from stocks",
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "stock",
+          "current": {
+            "text": ["AAPL", "FB", "TSLA"],
+            "value": ["AAPL", "FB", "TSLA"]
+          },
+          "label": "Stock",
+          "hide": "dontHide",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": false,
+          "description": "The stock name you want to follow (e.g., AAPL)",
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana-postgresql-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "${selected_data_source}"
+            },
+            "spec": {
+              "__legacyStringValue": "select name from stocks"
+            }
+          },
+          "regex": "",
+          "regexApplyTo": "value",
+          "sort": "disabled",
+          "definition": "select name from stocks",
+          "options": [],
+          "multi": true,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
       },
       {
-        "current": {
-          "text": "10000",
-          "value": "10000"
-        },
-        "includeAll": false,
-        "name": "bins",
-        "options": [
-          {
-            "selected": false,
-            "text": "1s",
-            "value": "1000"
-          },
-          {
-            "selected": false,
-            "text": "2s",
-            "value": "2000"
-          },
-          {
-            "selected": false,
-            "text": "5s",
-            "value": "5000"
-          },
-          {
-            "selected": true,
-            "text": "10s",
+        "kind": "CustomVariable",
+        "spec": {
+          "name": "bins",
+          "query": "1s : 1000,2s : 2000,5s : 5000,10s : 10000,30s : 20000,1min : 60000,5min : 300000,10min : 600000",
+          "current": {
+            "text": "10000",
             "value": "10000"
           },
-          {
-            "selected": false,
-            "text": "30s",
-            "value": "20000"
-          },
-          {
-            "selected": false,
-            "text": "1min",
-            "value": "60000"
-          },
-          {
-            "selected": false,
-            "text": "5min",
-            "value": "300000"
-          },
-          {
-            "selected": false,
-            "text": "10min",
-            "value": "600000"
-          }
-        ],
-        "query": "1s : 1000,2s : 2000,5s : 5000,10s : 10000,30s : 20000,1min : 60000,5min : 300000,10min : 600000",
-        "type": "custom"
+          "options": [
+            {
+              "selected": false,
+              "text": "1s",
+              "value": "1000"
+            },
+            {
+              "selected": false,
+              "text": "2s",
+              "value": "2000"
+            },
+            {
+              "selected": false,
+              "text": "5s",
+              "value": "5000"
+            },
+            {
+              "selected": true,
+              "text": "10s",
+              "value": "10000"
+            },
+            {
+              "selected": false,
+              "text": "30s",
+              "value": "20000"
+            },
+            {
+              "selected": false,
+              "text": "1min",
+              "value": "60000"
+            },
+            {
+              "selected": false,
+              "text": "5min",
+              "value": "300000"
+            },
+            {
+              "selected": false,
+              "text": "10min",
+              "value": "600000"
+            }
+          ],
+          "multi": false,
+          "includeAll": false,
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "allowCustomValue": true,
+          "valuesFormat": "csv"
+        }
       },
       {
-        "current": {
-          "text": "1.05",
-          "value": "1.05"
-        },
-        "description": "2 <=> from 0.5x to 2x.",
-        "label": "Order book width",
-        "name": "width",
-        "options": [
-          {
-            "selected": true,
+        "kind": "TextVariable",
+        "spec": {
+          "name": "width",
+          "current": {
             "text": "1.05",
             "value": "1.05"
-          }
-        ],
-        "query": "1.05",
-        "type": "textbox"
+          },
+          "query": "1.05",
+          "label": "Order book width",
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "description": "2 <=> from 0.5x to 2x."
+        }
       },
       {
-        "current": {},
-        "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "${selected_data_source}"
-        },
-        "definition": "select (extract(EPOCH from current_timestamp) - extract(EPOCH from current_date + ( max(timestamp)/(1000*1000) * interval '1 millisecond')))::integer as delay from orders o",
-        "includeAll": false,
-        "name": "timeOffset",
-        "options": [],
-        "query": "select (extract(EPOCH from current_timestamp) - extract(EPOCH from current_date + ( max(timestamp)/(1000*1000) * interval '1 millisecond')))::integer as delay from orders o",
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "timeOffset",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana-postgresql-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "${selected_data_source}"
+            },
+            "spec": {
+              "__legacyStringValue": "select (extract(EPOCH from current_timestamp) - extract(EPOCH from current_date + ( max(timestamp)/(1000*1000) * interval '1 millisecond')))::integer as delay from orders o"
+            }
+          },
+          "regex": "",
+          "regexApplyTo": "value",
+          "sort": "disabled",
+          "definition": "select (extract(EPOCH from current_timestamp) - extract(EPOCH from current_date + ( max(timestamp)/(1000*1000) * interval '1 millisecond')))::integer as delay from orders o",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
       }
     ]
-  },
-  "time": {
-    "from": "now-15m",
-    "to": "now"
-  },
-  "timepicker": {
-    "refresh_intervals": ["500ms", "1s", "5s", "10s", "30s", "1m"]
-  },
-  "timezone": "utc",
-  "title": "NASDAQ",
-  "uid": "edll9t2tw29dsc",
-  "version": 13,
-  "weekStart": ""
+  }
 }
