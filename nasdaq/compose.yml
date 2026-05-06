@@ -22,7 +22,7 @@ services:
       timeout: 1s
       retries: 10
   grafana:
-    image: grafana/grafana:12.0.0
+    image: grafana/grafana:13.1.0-25410206825
     container_name: grafana
     restart: unless-stopped
     environment:

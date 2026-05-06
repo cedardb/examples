@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 usage() {
     cat <<'EOF'
-Usage: ./demo.sh [--comparison|-c] <start|stop|clean>
+Usage: ./demo.sh [--comparison|-c] <start|stop|clean|pull>
 
 Normal mode starts CedarDB, Nasdaq client, Grafana and the AI chat for the demo.
 Comparison mode adds PostgreSQL to the deployment to compare the performance of the two DBs. 
@@ -12,6 +12,7 @@ Commands:
   start   Start the demo stack
   stop    Stop the demo stack
   clean   Stop the demo stack and remove volumes
+  pull    Pull the latest images for the demo stack
 
 Options:
   -c, --comparison   Use comparison.compose.yml
@@ -31,9 +32,9 @@ while (($# > 0)); do
             usage
             exit 0
             ;;
-        start|stop|clean)
+        start|stop|clean|pull)
             if [[ -n "$command" ]]; then
-                echo "Only one command is allowed: start, stop, or clean." >&2
+                echo "Only one command is allowed: start, stop, clean, or pull." >&2
                 usage >&2
                 exit 1
             fi
@@ -49,7 +50,7 @@ while (($# > 0)); do
 done
 
 if [[ -z "$command" ]]; then
-    echo "Missing command: start, stop, or clean." >&2
+    echo "Missing command: start, stop, clean, or pull." >&2
     usage >&2
     exit 1
 fi
@@ -75,12 +76,15 @@ case "$command" in
             export GRAFANA_USER="postgres"
             export GRAFANA_USER_PWD="${ADMIN_PWD}"
         fi
-        docker compose "${compose_args[@]}" up -d --build --force-recreate
+        docker compose "${compose_args[@]}" up -d --build --force-recreate --remove-orphans
         ;;
     stop)
         docker compose "${compose_args[@]}" down
         ;;
     clean)
         docker compose "${compose_args[@]}" down -v
+        ;;
+    pull)
+        docker compose "${compose_args[@]}" pull --ignore-buildable
         ;;
 esac
