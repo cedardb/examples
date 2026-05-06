@@ -6,9 +6,15 @@ services:
     environment:
       CEDAR_DB: postgres
       CEDAR_USER: postgres
-      CEDAR_PASSWORD: postgres
+      CEDAR_PASSWORD: ${ADMIN_PWD}
+      GRAFANA_USER_PWD: ${GRAFANA_USER_PWD}
+    env_file:
+      - db-config/cedar/license.env
+    ports:
+      - 5432:5432
     volumes:
       - data:/data
+      - ./db-config/cedar/user_init.sh:/docker-entrypoint-initdb.d/user_init.sh
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432" ]
       interval: 10s
@@ -19,10 +25,11 @@ services:
     container_name: grafana
     restart: unless-stopped
     environment:
-      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=100ms
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      GRAFANA_USER_PWD: ${GRAFANA_USER_PWD}
+      GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 100ms
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: true
     ports:
       - 3000:3000
     depends_on:
@@ -37,12 +44,12 @@ services:
       cedar:
         condition: service_healthy
     environment:
-      - OPENROUTER_API_KEY={your_api_key_here}
-      - LLM_MODEL=anthropic/claude-sonnet-4.5
-      - DB_HOST=cedar
-      - DB_NAME=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      OPENROUTER_API_KEY: "{your_api_key_here}"
+      LLM_MODEL: anthropic/claude-sonnet-4.5
+      DB_HOST: cedar
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
     ports:
       - 8080:8080
   parser:
@@ -60,6 +67,8 @@ services:
         condition: service_healthy
       parser:
         condition: service_completed_successfully
+    environment:
+      DB1_CONNECTION_STRING: postgresql://postgres:${ADMIN_PWD}@cedar:5432/postgres
     volumes:
       - data:/nasdaq/data
 

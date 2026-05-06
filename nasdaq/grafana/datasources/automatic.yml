@@ -13,11 +13,11 @@ datasources:
     uid: fdl2zuq913klcb
     orgId: 1
     url: cedar:5432
-    user: postgres
+    user: grafana
     database: postgres
     basicAuth: false
     secureJsonData:
-      password: postgres
+      password: ${GRAFANA_USER_PWD}
     isDefault: true
     jsonData:
       connMaxLifetime: 14400
@@ -36,11 +36,11 @@ datasources:
     uid: fdl2zuq913klcc
     orgId: 1
     url: postgres:5432
-    user: postgres
+    user: grafana
     database: postgres
     basicAuth: false
     secureJsonData:
-      password: postgres
+      password: ${GRAFANA_USER_PWD}
     isDefault: false
     jsonData:
       connMaxLifetime: 14400
