@@ -5,6 +5,9 @@ usage() {
     cat <<'EOF'
 Usage: ./demo.sh [--comparison|-c] <start|stop|clean>
 
+Normal mode starts CedarDB, Nasdaq client, Grafana and the AI chat for the demo.
+Comparison mode adds PostgreSQL to the deployment to compare the performance of the two DBs. 
+
 Commands:
   start   Start the demo stack
   stop    Stop the demo stack
@@ -63,10 +66,11 @@ export ADMIN_PWD="${ADMIN_PWD:-evensaferpassword}"
 case "$command" in
     start)
         if [[ ! -s "db-config/cedar/license.env" ]]; then
-            echo "Cedar license missing at db-config/cedar/license.env, falling back to admin user for grafana!" >&2
-            echo "License is required for granting permissions to users." >&2
-            echo "Get your trial license at: console.cedardb.com" >&2
-            echo "" >&2
+            printf '%s\n' \
+                "Cedar license missing at db-config/cedar/license.env, falling back to admin user for grafana!" \
+                "License is required for granting permissions to users." \
+                "Get your trial license at: console.cedardb.com" \
+                "" >&2
 
             export GRAFANA_USER="postgres"
             export GRAFANA_USER_PWD="${ADMIN_PWD}"
