@@ -5,9 +5,14 @@ services:
     environment:
       CEDAR_DB: postgres
       CEDAR_USER: postgres
-      CEDAR_PASSWORD: postgres
+      CEDAR_PASSWORD: ${ADMIN_PWD}
+      GRAFANA_USER_PWD: ${GRAFANA_USER_PWD}
+    env_file:
+      - path: db-config/cedar/license.env
+        required: false
     volumes:
       - data:/data
+      - ./db-config/cedar/user_init.sh:/docker-entrypoint-initdb.d/user_init.sh
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432" ]
       interval: 10s
@@ -19,9 +24,11 @@ services:
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${ADMIN_PWD}
+      GRAFANA_USER_PWD: ${GRAFANA_USER_PWD}
     volumes:
       - data:/data
+      - ./db-config/postgres/:/docker-entrypoint-initdb.d/
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432" ]
       interval: 10s
@@ -31,10 +38,12 @@ services:
     image: grafana/grafana:12.0.0
     restart: unless-stopped
     environment:
-      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=100ms
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      GRAFANA_USER: ${GRAFANA_USER}
+      GRAFANA_USER_PWD: ${GRAFANA_USER_PWD}
+      GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 100ms
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: true
     ports:
       - 3000:3000
     depends_on:
@@ -59,8 +68,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DB1_CONNECTION_STRING: postgresql://postgres:postgres@cedar:5432/postgres
-      DB2_CONNECTION_STRING: postgresql://postgres:postgres@postgres:5432/postgres
+      DB1_CONNECTION_STRING: postgresql://postgres:${ADMIN_PWD}@cedar:5432/postgres
+      DB2_CONNECTION_STRING: postgresql://postgres:${ADMIN_PWD}@postgres:5432/postgres
+      GRAFANA_USER: ${GRAFANA_USER}
     volumes:
       - data:/nasdaq/data
 
