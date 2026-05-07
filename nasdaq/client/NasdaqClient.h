@@ -15,6 +15,8 @@ class NasdaqClient {
 
    void createSchema(std::string_view schemaPath) const;
 
+   void grantPermissions(std::string_view grafanaUser) const;
+
    void loadStaticData(std::string_view stocksPath, std::string_view marketMakerPath) const;
 
    void loadPremarketData(std::string_view ordersPath, std::string_view executionsPath, std::string_view cancellationsPath) const;

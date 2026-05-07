@@ -3,9 +3,12 @@
 
 #include <cassert>
 #include <chrono>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
+#include <string>
 #include <string_view>
 
 static void noticeProcessor(void* /*arg*/, const char* /*message*/) {}
@@ -23,6 +26,29 @@ void NasdaqClient::connect(std::string_view connectionString) {
 void NasdaqClient::createSchema(std::string_view schemaPath) const {
    loadFile(std::string(schemaPath));
    std::cout << "[" << PQhost(conn) << "] Nasdaq schema created." << std::endl;
+}
+
+void NasdaqClient::grantPermissions(std::string_view grafanaUser) const {
+   assert(conn);
+
+   const char* connectionUser = PQuser(conn);
+   if (connectionUser != nullptr && grafanaUser == connectionUser) {
+      std::cout << "[" << PQhost(conn) << "] Nasdaq permissions skipped for current user." << std::endl;
+      return;
+   }
+
+   char* quotedUser = PQescapeIdentifier(conn, grafanaUser.data(), grafanaUser.size());
+   if (quotedUser == nullptr)
+      throw std::runtime_error("could not escape grafana user");
+
+   std::string command = std::format(
+      "GRANT USAGE ON schema public TO {}; GRANT SELECT ON ALL TABLES IN schema public TO {};",
+      quotedUser,
+      quotedUser);
+   PQfreemem(quotedUser);
+
+   exec(conn, command);
+   std::cout << "[" << PQhost(conn) << "] Nasdaq permissions created." << std::endl;
 }
 
 void NasdaqClient::loadStaticData(std::string_view stocksPath, std::string_view marketMakerPath) const {

@@ -56,14 +56,20 @@ if $comparison; then
     compose_args=(-f comparison.compose.yml)
 fi
 
+export GRAFANA_USER="${GRAFANA_USER:-grafana}"
 export GRAFANA_USER_PWD="${GRAFANA_USER_PWD:-supersafepassword}"
 export ADMIN_PWD="${ADMIN_PWD:-evensaferpassword}"
 
 case "$command" in
     start)
         if [[ ! -s "db-config/cedar/license.env" ]]; then
-            echo "Missing required Cedar license file: db-config/cedar/license.env" >&2
-            exit 1
+            echo "Cedar license missing at db-config/cedar/license.env, falling back to admin user for grafana!" >&2
+            echo "License is required for granting permissions to users." >&2
+            echo "Get your trial license at: console.cedardb.com" >&2
+            echo "" >&2
+
+            export GRAFANA_USER="postgres"
+            export GRAFANA_USER_PWD="${ADMIN_PWD}"
         fi
         docker compose "${compose_args[@]}" up -d --build --force-recreate
         ;;

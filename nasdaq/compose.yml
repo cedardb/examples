@@ -9,7 +9,8 @@ services:
       CEDAR_PASSWORD: ${ADMIN_PWD}
       GRAFANA_USER_PWD: ${GRAFANA_USER_PWD}
     env_file:
-      - db-config/cedar/license.env
+      - path: db-config/cedar/license.env
+        required: false
     ports:
       - 5432:5432
     volumes:
@@ -25,6 +26,7 @@ services:
     container_name: grafana
     restart: unless-stopped
     environment:
+      GRAFANA_USER: ${GRAFANA_USER}
       GRAFANA_USER_PWD: ${GRAFANA_USER_PWD}
       GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 100ms
       GF_AUTH_ANONYMOUS_ENABLED: true
@@ -69,6 +71,7 @@ services:
         condition: service_completed_successfully
     environment:
       DB1_CONNECTION_STRING: postgresql://postgres:${ADMIN_PWD}@cedar:5432/postgres
+      GRAFANA_USER: ${GRAFANA_USER}
     volumes:
       - data:/nasdaq/data
 

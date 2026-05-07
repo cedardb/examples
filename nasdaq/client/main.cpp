@@ -1,7 +1,9 @@
 #include "NasdaqClient.h"
 #include <chrono>
+#include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <thread>
 
@@ -26,6 +28,8 @@ int main(int argc, char* argv[]) {
    std::string sqlPath = "./";
    std::string dataPath = argv[1];
    std::string serverDataPath = argv[2];
+   const char* envUser = std::getenv("GRAFANA_USER");
+   const std::string grafanaUser = (envUser != nullptr && envUser[0] != '\0') ? envUser : "grafana";
 
    // 1. Create the schema before loading any data.
    // 2. Load static reference tables next.
@@ -33,6 +37,7 @@ int main(int argc, char* argv[]) {
    {
       std::jthread schemaThread([&] {
          client.createSchema(sqlPath + "schema.sql");
+         client.grantPermissions(grafanaUser);
          client.loadStaticData(serverDataPath + "stocks.csv", serverDataPath + "marketMakers.csv");
          client.loadPremarketData(
             serverDataPath + "ordersPreMarket.csv",
@@ -42,6 +47,7 @@ int main(int argc, char* argv[]) {
       std::jthread schemaThread2([&] {
          if (client2) {
             client2->createSchema(sqlPath + "schema.sql");
+            client2->grantPermissions(grafanaUser);
             client2->loadStaticData(serverDataPath + "stocks.csv", serverDataPath + "marketMakers.csv");
             client2->loadPremarketData(
                serverDataPath + "ordersPreMarket.csv",

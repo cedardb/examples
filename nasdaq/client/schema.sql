@@ -78,6 +78,3 @@ create index on orderbook(orderId);
 create index on cancellations(timestamp);
 create index on executions(timestamp);
 create index on orders(timestamp);
-
-GRANT USAGE ON schema public TO grafana;
-GRANT SELECT ON ALL TABLES IN schema public TO grafana;
