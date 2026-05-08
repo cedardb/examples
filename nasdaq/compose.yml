@@ -1,6 +1,5 @@
 services:
   cedar:
-    container_name: cedar
     image: cedardb/cedardb
     restart: always
     environment:
@@ -17,13 +16,13 @@ services:
       - data:/data
       - ./db-config/cedar/user_init.sh:/docker-entrypoint-initdb.d/user_init.sh
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432" ]
+      test:
+        ["CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
       interval: 10s
       timeout: 1s
       retries: 10
   grafana:
     image: grafana/grafana:13.1.0-25410206825
-    container_name: grafana
     restart: unless-stopped
     environment:
       GRAFANA_USER: ${GRAFANA_USER}
@@ -64,6 +63,7 @@ services:
     build:
       context: client
       dockerfile: Dockerfile
+    restart: unless-stopped
     depends_on:
       cedar:
         condition: service_healthy

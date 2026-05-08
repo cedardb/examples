@@ -275,12 +275,12 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
    Execution execution;
    Cancellation cancellation;
    // Populate the first values
-   orderReader.read_row(order.stockId, order.timestamp, order.orderId, order.side, order.quantity, order.price, order.attribution, order.prevOrder);
-   executionsReader.read_row(execution.timestamp, execution.orderId, execution.stockId, execution.quantity, execution.price);
-   cancellationsReader.read_row(cancellation.timestamp, cancellation.orderId, cancellation.stockId, cancellation.quantity);
+   bool readOrder = orderReader.read_row(order.stockId, order.timestamp, order.orderId, order.side, order.quantity, order.price, order.attribution, order.prevOrder);
+   bool readExecution = executionsReader.read_row(execution.timestamp, execution.orderId, execution.stockId, execution.quantity, execution.price);
+   bool readCancellation = cancellationsReader.read_row(cancellation.timestamp, cancellation.orderId, cancellation.stockId, cancellation.quantity);
    uint64_t base = order.timestamp; // We treat the first order after all preloaded orders as t0.
 
-   while (true) {
+   while (readOrder || readExecution || readCancellation) {
       auto curTime = time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
       auto limit = base + (curTime - startTime);
       size_t counter = 0;
@@ -291,7 +291,7 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
 
       // Write orders
       uint64_t prevTimestamp = order.timestamp;
-      while (order.timestamp < limit) {
+      while (readOrder && order.timestamp < limit) {
          sendOrder(order);
          ++counter;
 
@@ -304,14 +304,14 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
             sendOrderbookDelete(order.prevOrder);
             ++counter;
          }
-         orderReader.read_row(order.stockId, order.timestamp, order.orderId, order.side, order.quantity, order.price, order.attribution, order.prevOrder);
+         readOrder = orderReader.read_row(order.stockId, order.timestamp, order.orderId, order.side, order.quantity, order.price, order.attribution, order.prevOrder);
          assert(order.timestamp >= prevTimestamp);
          prevTimestamp = order.timestamp;
       }
 
       // Write executions
       prevTimestamp = execution.timestamp;
-      while (execution.timestamp < limit) {
+      while (readExecution && execution.timestamp < limit) {
          sendExecution(execution);
          ++counter;
          if (execution.orderId != 0) // Only visible orders change the order book
@@ -320,14 +320,14 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
             ++counter;
          }
 
-         executionsReader.read_row(execution.timestamp, execution.orderId, execution.stockId, execution.quantity, execution.price);
+         readExecution = executionsReader.read_row(execution.timestamp, execution.orderId, execution.stockId, execution.quantity, execution.price);
          assert(execution.timestamp >= prevTimestamp);
          prevTimestamp = execution.timestamp;
       }
 
       // Write cancellations
       prevTimestamp = cancellation.timestamp;
-      while (cancellation.timestamp < limit) {
+      while (readCancellation && cancellation.timestamp < limit) {
          sendCancellation(cancellation);
          ++counter;
 
@@ -340,7 +340,7 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
          }
          ++counter;
 
-         cancellationsReader.read_row(cancellation.timestamp, cancellation.orderId, cancellation.stockId, cancellation.quantity);
+         readCancellation = cancellationsReader.read_row(cancellation.timestamp, cancellation.orderId, cancellation.stockId, cancellation.quantity);
          assert(cancellation.timestamp >= prevTimestamp);
          prevTimestamp = cancellation.timestamp;
       }
@@ -351,6 +351,8 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
    }
    exitPipelineMode(conn);
+
+   std::cout << "[" << PQhost(conn) << "] Exchange stopped!" << std::endl;
 }
 
 void NasdaqClient::close() const noexcept {

@@ -14,7 +14,8 @@ services:
       - data:/data
       - ./db-config/cedar/user_init.sh:/docker-entrypoint-initdb.d/user_init.sh
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432" ]
+      test:
+        ["CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
       interval: 10s
       timeout: 1s
       retries: 10
@@ -30,7 +31,8 @@ services:
       - data:/data
       - ./db-config/postgres/:/docker-entrypoint-initdb.d/
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432" ]
+      test:
+        ["CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -60,6 +62,7 @@ services:
     build:
       context: client
       dockerfile: Dockerfile
+    restart: unless-stopped
     depends_on:
       cedar:
         condition: service_healthy
