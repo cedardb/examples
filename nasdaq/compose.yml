@@ -10,8 +10,6 @@ services:
     env_file:
       - path: db-config/cedar/license.env
         required: false
-    ports:
-      - 5432:5432
     volumes:
       - data:/data
       - ./db-config/cedar/user_init.sh:/docker-entrypoint-initdb.d/user_init.sh
@@ -32,7 +30,8 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: true
     ports:
-      - 3000:3000
+      - 127.0.0.1:3000:3000
+      - "[::1]:3000:3000"
     depends_on:
       - cedar
     volumes:
@@ -52,7 +51,8 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
     ports:
-      - 8080:8080
+      - 127.0.0.1:8080:8080
+      - "[::1]:8080:8080"
   parser:
     build:
       context: parser

@@ -3,7 +3,9 @@ set -Eeuo pipefail
 
 usage() {
     cat <<'EOF'
-Usage: ./demo.sh [--comparison|-c] <start|stop|clean|pull>
+Usage: 
+    ./demo.sh <start|stop|clean|pull>
+or  DB_CPU_LIMIT=X DB_MEM_LIMIT=XXgb ./demo.sh [--comparison|-c] <start|stop|clean|pull>
 
 Normal mode starts CedarDB, Nasdaq client, Grafana and the AI chat for the demo.
 Comparison mode adds PostgreSQL to the deployment to compare the performance of the two DBs. 
@@ -15,7 +17,7 @@ Commands:
   pull    Pull the latest images for the demo stack
 
 Options:
-  -c, --comparison   Use comparison.compose.yml
+  -c, --comparison   Use comparison.compose.yml; requires DB_CPU_LIMIT and DB_MEM_LIMIT
   -h, --help         Show this help message
 EOF
 }
@@ -58,6 +60,12 @@ fi
 compose_args=()
 if $comparison; then
     compose_args=(-f comparison.compose.yml)
+fi
+
+if $comparison && [[ -z "${DB_CPU_LIMIT:-}" || -z "${DB_MEM_LIMIT:-}" ]]; then
+    echo $'Comparison mode requires DB_CPU_LIMIT and DB_MEM_LIMIT to be set.\n' >&2
+    usage >&2
+    exit 1
 fi
 
 export GRAFANA_USER="${GRAFANA_USER:-grafana}"
