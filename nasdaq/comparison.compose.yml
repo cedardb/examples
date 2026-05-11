@@ -2,6 +2,8 @@ services:
   cedar:
     image: cedardb/cedardb
     restart: unless-stopped
+    cpus: ${DB_CPU_LIMIT}
+    mem_limit: ${DB_MEM_LIMIT}
     environment:
       CEDAR_DB: postgres
       CEDAR_USER: postgres
@@ -22,6 +24,8 @@ services:
   postgres:
     image: postgres:18
     restart: unless-stopped
+    cpus: ${DB_CPU_LIMIT}
+    mem_limit: ${DB_MEM_LIMIT}
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
@@ -47,7 +51,8 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: true
     ports:
-      - 3000:3000
+      - 127.0.0.1:3000:3000
+      - "[::1]:3000:3000"
     depends_on:
       - cedar
     volumes:
