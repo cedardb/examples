@@ -12,7 +12,7 @@ datasources:
     access: proxy
     uid: fdl2zuq913klcb
     orgId: 1
-    url: cedar:5432
+    url: localhost:5432
     user: ${GRAFANA_USER}
     database: postgres
     basicAuth: false

@@ -1,26 +1,26 @@
 services:
-  cedar:
-    image: cedardb/cedardb
-    restart: always
-    environment:
-      CEDAR_DB: postgres
-      CEDAR_USER: postgres
-      CEDAR_PASSWORD: ${ADMIN_PWD}
-      GRAFANA_USER_PWD: ${GRAFANA_USER_PWD}
-    env_file:
-      - path: db-config/cedar/license.env
-        required: false
-    ports:
-      - 5432:5432
-    volumes:
-      - data:/data
-      - ./db-config/cedar/user_init.sh:/docker-entrypoint-initdb.d/user_init.sh
-    healthcheck:
-      test:
-        ["CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
-      interval: 10s
-      timeout: 1s
-      retries: 10
+  # cedar:
+  #   image: cedardb/cedardb
+  #   restart: always
+  #   environment:
+  #     CEDAR_DB: postgres
+  #     CEDAR_USER: postgres
+  #     CEDAR_PASSWORD: ${ADMIN_PWD}
+  #     GRAFANA_USER_PWD: ${GRAFANA_USER_PWD}
+  #   env_file:
+  #     - path: db-config/cedar/license.env
+  #       required: false
+  #   ports:
+  #     - 5432:5432
+  #   volumes:
+  #     - data:/data
+  #     - ./db-config/cedar/user_init.sh:/docker-entrypoint-initdb.d/user_init.sh
+  #   healthcheck:
+  #     test:
+  #       ["CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
+  #     interval: 10s
+  #     timeout: 1s
+  #     retries: 10
   grafana:
     image: grafana/grafana:13.1.0-25410206825
     restart: unless-stopped
@@ -31,28 +31,27 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: true
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: true
-    ports:
-      - 3000:3000
-    depends_on:
-      - cedar
+    network_mode: host
+    # depends_on:
+    #   - cedar
     volumes:
       - ./grafana:/etc/grafana/provisioning
-  aichat:
-    build:
-      context: aichat
-      dockerfile: Dockerfile
-    depends_on:
-      cedar:
-        condition: service_healthy
-    environment:
-      OPENROUTER_API_KEY: "{your_api_key_here}"
-      LLM_MODEL: anthropic/claude-sonnet-4.5
-      DB_HOST: cedar
-      DB_NAME: postgres
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-    ports:
-      - 8080:8080
+  # aichat:
+  #   build:
+  #     context: aichat
+  #     dockerfile: Dockerfile
+  #   depends_on:
+  #     cedar:
+  #       condition: service_healthy
+  #   environment:
+  #     OPENROUTER_API_KEY: "{your_api_key_here}"
+  #     LLM_MODEL: anthropic/claude-sonnet-4.5
+  #     DB_HOST: cedar
+  #     DB_NAME: postgres
+  #     DB_USER: postgres
+  #     DB_PASSWORD: postgres
+  #   ports:
+  #     - 8080:8080
   parser:
     build:
       context: parser
@@ -65,13 +64,14 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
-      cedar:
-        condition: service_healthy
+      # cedar:
+      #   condition: service_healthy
       parser:
         condition: service_completed_successfully
     environment:
-      DB1_CONNECTION_STRING: postgresql://postgres:${ADMIN_PWD}@cedar:5432/postgres
+      DB1_CONNECTION_STRING: postgresql://postgres:${ADMIN_PWD}@localhost:5432/postgres
       GRAFANA_USER: ${GRAFANA_USER}
+    network_mode: host
     volumes:
       - data:/nasdaq/data
 
