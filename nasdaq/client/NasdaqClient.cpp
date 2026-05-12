@@ -263,9 +263,9 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
    prepare(conn, "newOrder", "INSERT INTO orders VALUES($1, $2, $3, $4, $5, $6, $7, $8);");
    prepare(conn, "newExecution", "INSERT INTO executions VALUES($1, $2, $3, $4, $5);");
    prepare(conn, "newCancellation", "INSERT INTO cancellations VALUES($1, $2, $3, $4);");
-   prepare(conn, "addToOrderbook", "INSERT INTO orderbook VALUES($1, $2, $3, $4, $5);");
-   prepare(conn, "deleteFromOrderbook", "DELETE FROM orderbook WHERE orderId = $1;");
-   prepare(conn, "reduceInOrderbook", "UPDATE orderbook SET quantity = quantity - $2 WHERE orderId = $1;");
+   // prepare(conn, "addToOrderbook", "INSERT INTO orderbook VALUES($1, $2, $3, $4, $5);");
+   // prepare(conn, "deleteFromOrderbook", "DELETE FROM orderbook WHERE orderId = $1;");
+   // prepare(conn, "reduceInOrderbook", "UPDATE orderbook SET quantity = quantity - $2 WHERE orderId = $1;");
    prepare(conn, "commit", "COMMIT;");
    prepare(conn, "begin", "BEGIN;");
 
@@ -296,14 +296,14 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
          ++counter;
 
          // Insert new order into orderbook
-         sendOrderbookAdd(order.orderId, order.stockId, order.side, order.price, order.quantity);
-         ++counter;
+         // sendOrderbookAdd(order.orderId, order.stockId, order.side, order.price, order.quantity);
+         // ++counter;
 
-         if (order.prevOrder != 0) {
-            // Remove the old order from the orderbook
-            sendOrderbookDelete(order.prevOrder);
-            ++counter;
-         }
+         // if (order.prevOrder != 0) {
+         //    // Remove the old order from the orderbook
+         //    sendOrderbookDelete(order.prevOrder);
+         //    ++counter;
+         // }
          readOrder = orderReader.read_row(order.stockId, order.timestamp, order.orderId, order.side, order.quantity, order.price, order.attribution, order.prevOrder);
          assert(order.timestamp >= prevTimestamp);
          prevTimestamp = order.timestamp;
@@ -316,8 +316,8 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
          ++counter;
          if (execution.orderId != 0) // Only visible orders change the order book
          {
-            sendOrderbookReduce(execution.orderId, execution.quantity);
-            ++counter;
+            // sendOrderbookReduce(execution.orderId, execution.quantity);
+            // ++counter;
          }
 
          readExecution = executionsReader.read_row(execution.timestamp, execution.orderId, execution.stockId, execution.quantity, execution.price);
@@ -331,14 +331,14 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
          sendCancellation(cancellation);
          ++counter;
 
-         if (cancellation.quantity == 0) // Full delete
-         {
-            sendOrderbookDelete(cancellation.orderId);
-         } else // Partial delete
-         {
-            sendOrderbookReduce(cancellation.orderId, cancellation.quantity);
-         }
-         ++counter;
+         // if (cancellation.quantity == 0) // Full delete
+         // {
+         //    sendOrderbookDelete(cancellation.orderId);
+         // } else // Partial delete
+         // {
+         //    sendOrderbookReduce(cancellation.orderId, cancellation.quantity);
+         // }
+         // ++counter;
 
          readCancellation = cancellationsReader.read_row(cancellation.timestamp, cancellation.orderId, cancellation.stockId, cancellation.quantity);
          assert(cancellation.timestamp >= prevTimestamp);

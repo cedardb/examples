@@ -63,18 +63,18 @@ create table cancellations
     quantity    int
 );
 
-create table orderbook
-(
-    orderId     bigint,
-    stockId     int,
-    side        text,
-    price       numeric(10,4),
-    quantity    int,
-    primary key(orderid, price)
-);
+-- create table orderbook
+-- (
+--     orderId     bigint,
+--     stockId     int,
+--     side        text,
+--     price       numeric(10,4),
+--     quantity    int,
+--     primary key(orderid, price)
+-- );
 commit;
 
-create index on orderbook(orderId);
+-- create index on orderbook(orderId);
 create index on cancellations(timestamp);
 create index on executions(timestamp);
 create index on orders(timestamp);
