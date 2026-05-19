@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SQL Queries — F1 Telemetry CedarDB Demo</title>
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --line: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #f97316;
+    --green: #1ee2a2;
+    --red: #ff5577;
+    --yellow: #f4d04e;
+    --blue: #3aa6ff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.6;
+    font-size: 17px;
+  }
+  body { padding: 36px 56px 96px; max-width: 1180px; margin: 0 auto; }
+  header.page {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 22px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  header.page h1 {
+    margin: 0;
+    font-size: 28px;
+    letter-spacing: 0.02em;
+    font-weight: 700;
+  }
+  header.page h1 .accent { color: var(--accent); }
+  header.page .lede {
+    color: var(--muted);
+    font-size: 16px;
+  }
+  h2 {
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    padding-top: 32px;
+    margin: 44px 0 18px;
+  }
+  h2 .count {
+    color: var(--accent);
+    font-weight: 400;
+    margin-left: 8px;
+  }
+  p { margin: 0 0 14px; }
+  p.intro { color: var(--muted); font-size: 16px; margin-bottom: 28px; max-width: 80ch; }
+  table.summary {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14.5px;
+    margin: 0 0 34px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  table.summary th, table.summary td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  table.summary th {
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    border-bottom: 1px solid var(--line);
+  }
+  table.summary td a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted transparent;
+  }
+  table.summary td a:hover { border-bottom-color: var(--accent); }
+  table.summary .phase-W { color: var(--yellow); }
+  table.summary .phase-R { color: var(--blue); }
+  article.query {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 22px 26px;
+    margin: 0 0 22px;
+  }
+  article.query header h3 {
+    margin: 0 0 8px;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  article.query header h3 a.anchor {
+    color: var(--muted);
+    text-decoration: none;
+    margin-right: 10px;
+    font-weight: 400;
+  }
+  article.query header h3 a.anchor:hover { color: var(--accent); }
+  article.query .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+  article.query .meta .tag {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px 11px;
+  }
+  article.query .meta .tag.cadence { color: var(--accent); border-color: rgba(249, 115, 22, 0.4); }
+  article.query .meta .tag.tables  { color: var(--green); border-color: rgba(30, 226, 162, 0.3); }
+  article.query pre {
+    background: #0a0d12;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 0 0 16px;
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+  /* Override the hljs github-dark theme background to match the panel. */
+  pre code.hljs { background: transparent; padding: 0; }
+  article.query .notes {
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  article.query .notes em {
+    color: var(--muted);
+    font-style: normal;
+  }
+  article.query .notes code {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 14px;
+  }
+  footer.page {
+    margin-top: 56px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header class="page">
+  <h1>SQL queries · <span class="accent">F1 telemetry × CedarDB</span></h1>
+  <span class="lede">every statement the simulator and dashboard run, what role it plays, and how often it fires.</span>
+</header>
+
+<p class="intro">
+  The demo's headline story is concurrent OLTP+OLAP on the same table.
+  The simulator streams ~200 rows/second into <code>telemetry</code> via the Postgres
+  <code>COPY</code> protocol; the dashboard runs five different read queries against the
+  same table — at refresh rates from 200&nbsp;ms to 3&nbsp;s — with no replicas, no
+  ETL, and no batching. This page is the working catalog of those queries.
+</p>
+
+<table class="summary">
+  <thead>
+    <tr>
+      <th style="width:42px">Phase</th>
+      <th>Query</th>
+      <th>Source</th>
+      <th>Cadence</th>
+      <th>Tables</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="phase-W">W</td><td><a href="#q1-create-session">Create session</a></td><td>simulator.NewSimulator</td><td>once / race</td><td>sessions</td></tr>
+    <tr><td class="phase-W">W</td><td><a href="#q2-seed-drivers">Seed drivers (batch upsert)</a></td><td>simulator.NewSimulator</td><td>20 / race</td><td>drivers</td></tr>
+    <tr><td class="phase-W">W</td><td><a href="#q3-race-start-event">Race-start event</a></td><td>simulator.Run</td><td>once / race</td><td>events</td></tr>
+    <tr><td class="phase-W">W</td><td><a href="#q4-telemetry-copy">Telemetry bulk INSERT (COPY)</a></td><td>simulator.Run</td><td>10 Hz · 20 rows / tick</td><td>telemetry</td></tr>
+    <tr><td class="phase-W">W</td><td><a href="#q5-insert-lap">Lap-completed INSERT</a></td><td>simulator.insertLap</td><td>~1 000 / race</td><td>laps</td></tr>
+    <tr><td class="phase-W">W</td><td><a href="#q6-end-session">End session</a></td><td>simulator.endSession</td><td>once / race</td><td>sessions</td></tr>
+    <tr><td class="phase-R">R</td><td><a href="#q7-pick-session">Pick current session</a></td><td>5 endpoints share this</td><td>4–5 / s combined</td><td>sessions</td></tr>
+    <tr><td class="phase-R">R</td><td><a href="#q8-sse-snapshot">SSE state snapshot</a></td><td>web.loadSnapshot</td><td>5 Hz (every 200 ms)</td><td>telemetry · laps · drivers</td></tr>
+    <tr><td class="phase-R">R</td><td><a href="#q9-leaderboard">Leaderboard with gap to leader</a></td><td>web.handleLeaderboard</td><td>2 Hz (every 500 ms)</td><td>telemetry · laps · drivers</td></tr>
+    <tr><td class="phase-R">R</td><td><a href="#q10-speed-map">Speed-map heatmap</a></td><td>web.handleSpeedMap</td><td>0.33 Hz (every 3 s)</td><td>telemetry</td></tr>
+    <tr><td class="phase-R">R</td><td><a href="#q11-ingest-rate">Live ingest rate</a></td><td>web.handleIngestRate</td><td>1 Hz</td><td>telemetry</td></tr>
+  </tbody>
+</table>
+
+<h2>Write path · Simulator → CedarDB<span class="count">6 statements</span></h2>
+
+<article class="query" id="q1-create-session">
+  <header>
+    <h3><a class="anchor" href="#q1-create-session">§1</a>Create session</h3>
+    <div class="meta">
+      <span class="tag">internal/sim/simulator.go · NewSimulator()</span>
+      <span class="tag cadence">runs: once at race start</span>
+      <span class="tag tables">tables: sessions</span>
+    </div>
+  </header>
+<pre><code class="language-sql">INSERT INTO sessions (name, track, total_laps)
+VALUES ($1, $2, $3)
+RETURNING session_id;</code></pre>
+  <div class="notes">
+    <p>Allocates the <code>BIGSERIAL session_id</code> that every downstream write carries
+    as its tenant key. <code>track</code> is the human display name of the preset chosen
+    by the <code>-track</code> CLI flag (e.g. <em>"Cedar Park Circuit"</em>) — the dashboard
+    reads it back later and uses it to regenerate matching geometry on the client side,
+    so we never persist the polyline itself.</p>
+  </div>
+</article>
+
+<article class="query" id="q2-seed-drivers">
+  <header>
+    <h3><a class="anchor" href="#q2-seed-drivers">§2</a>Seed drivers (batch upsert)</h3>
+    <div class="meta">
+      <span class="tag">internal/sim/simulator.go · NewSimulator()</span>
+      <span class="tag cadence">runs: 20 statements in one pgx Batch, once at race start</span>
+      <span class="tag tables">tables: drivers</span>
+    </div>
+  </header>
+<pre><code class="language-sql">INSERT INTO drivers (driver_id, code, full_name, team, car_number, color_hex)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (driver_id) DO UPDATE SET
+    code       = EXCLUDED.code,
+    full_name  = EXCLUDED.full_name,
+    team       = EXCLUDED.team,
+    car_number = EXCLUDED.car_number,
+    color_hex  = EXCLUDED.color_hex;</code></pre>
+  <div class="notes">
+    <p>Idempotent upsert. The drivers table is small, fixed (20 rows), and never written
+    to during the race — it's separated from the hot fact table on purpose. Running this
+    in a <code>pgx.Batch</code> keeps the round-trip cost to one network turn.</p>
+  </div>
+</article>
+
+<article class="query" id="q3-race-start-event">
+  <header>
+    <h3><a class="anchor" href="#q3-race-start-event">§3</a>Race-start event</h3>
+    <div class="meta">
+      <span class="tag">internal/sim/simulator.go · Run()</span>
+      <span class="tag cadence">runs: once at race start</span>
+      <span class="tag tables">tables: events</span>
+    </div>
+  </header>
+<pre><code class="language-sql">INSERT INTO events (session_id, ts, kind, detail)
+VALUES ($1, now(), 'race_start', $2);</code></pre>
+  <div class="notes">
+    <p>The <code>events</code> table is a low-volume audit log indexed
+    <code>(session_id, ts DESC)</code>. <em>kind</em> is intended for an extensible set of
+    values — <code>'race_start'</code>, <code>'fastest_lap'</code>, <code>'overtake'</code>,
+    <code>'drs_open'</code>, etc. — though only <code>race_start</code> is wired in today.
+    Good spot to hang future "what just happened" tickers off.</p>
+  </div>
+</article>
+
+<article class="query" id="q4-telemetry-copy">
+  <header>
+    <h3><a class="anchor" href="#q4-telemetry-copy">§4</a>Telemetry bulk INSERT (COPY)</h3>
+    <div class="meta">
+      <span class="tag">internal/sim/simulator.go · Run()</span>
+      <span class="tag cadence">runs: every tick — default 10 Hz × 20 rows = ~200 rows / second</span>
+      <span class="tag tables">tables: telemetry (hot)</span>
+    </div>
+  </header>
+<pre><code class="language-go">pool.CopyFrom(ctx,
+    pgx.Identifier{"telemetry"},
+    []string{"session_id", "driver_id", "ts", "lap",
+             "track_pos", "pos_x", "pos_y", "speed_kph",
+             "rpm", "gear", "throttle", "brake", "drs"},
+    pgx.CopyFromRows(tele),
+)</code></pre>
+  <div class="notes">
+    <p>This is the workload the demo is built around. pgx's <code>CopyFrom</code> uses
+    the Postgres <code>COPY FROM STDIN</code> binary protocol over the wire — bypassing
+    the parser entirely, much cheaper than 20 separate <code>INSERT</code>s per tick.
+    Every read query on this page is competing with this stream of writes against the
+    same table; the headline of the demo is that none of them block.</p>
+    <p><em>Indexes maintained on every row:</em> <code>(session_id, driver_id, ts DESC)</code> and <code>(session_id, ts DESC)</code>.</p>
+  </div>
+</article>
+
+<article class="query" id="q5-insert-lap">
+  <header>
+    <h3><a class="anchor" href="#q5-insert-lap">§5</a>Lap-completed INSERT</h3>
+    <div class="meta">
+      <span class="tag">internal/sim/simulator.go · insertLap()</span>
+      <span class="tag cadence">runs: once per car per lap — ~1 000 inserts over a 50-lap race</span>
+      <span class="tag tables">tables: laps</span>
+    </div>
+  </header>
+<pre><code class="language-sql">INSERT INTO laps (session_id, driver_id, lap_number, lap_time_ms,
+                  sector1_ms, sector2_ms, sector3_ms, finished_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT DO NOTHING;</code></pre>
+  <div class="notes">
+    <p>Conflict target is the natural primary key <code>(session_id, driver_id, lap_number)</code>.
+    <code>ON CONFLICT DO NOTHING</code> makes retries safe — handy because a transient error
+    in the lap insert shouldn't kill the simulator. <code>laps</code> is small relative to
+    <code>telemetry</code>, but it's the authoritative source of Best/Last lap times for
+    the leaderboard.</p>
+  </div>
+</article>
+
+<article class="query" id="q6-end-session">
+  <header>
+    <h3><a class="anchor" href="#q6-end-session">§6</a>End session</h3>
+    <div class="meta">
+      <span class="tag">internal/sim/simulator.go · endSession()</span>
+      <span class="tag cadence">runs: once at race finish or context cancellation</span>
+      <span class="tag tables">tables: sessions</span>
+    </div>
+  </header>
+<pre><code class="language-sql">UPDATE sessions
+SET ended_at = now()
+WHERE session_id = $1;</code></pre>
+  <div class="notes">
+    <p><code>ended_at IS NULL</code> is how every read endpoint distinguishes a live race
+    from a completed one — see the <code>ORDER BY (ended_at IS NULL) DESC, started_at DESC</code>
+    pattern in §7. A simulator that crashes mid-race will leave this NULL, which is why
+    the read queries fall back to "most-recent" rather than panicking.</p>
+  </div>
+</article>
+
+<h2>Read path · Dashboard ← CedarDB<span class="count">5 distinct queries</span></h2>
+
+<article class="query" id="q7-pick-session">
+  <header>
+    <h3><a class="anchor" href="#q7-pick-session">§7</a>Pick the current session</h3>
+    <div class="meta">
+      <span class="tag">server.go · shared by 5 endpoints</span>
+      <span class="tag cadence">runs: 4–5 times per second combined across endpoints</span>
+      <span class="tag tables">tables: sessions</span>
+    </div>
+  </header>
+<pre><code class="language-sql">SELECT session_id, name, track, total_laps
+FROM sessions
+ORDER BY (ended_at IS NULL) DESC,
+         started_at DESC
+LIMIT 1;</code></pre>
+  <div class="notes">
+    <p>Boolean-as-sort-key trick: <code>(ended_at IS NULL) DESC</code> ranks unended (live)
+    sessions above ended ones, and <code>started_at DESC</code> tiebreaks among each
+    group. So the dashboard automatically follows whichever race is live right now, or
+    falls back to the most-recently-finished session if none is live. Used by
+    <code>handleTrackJSON</code>, <code>loadSnapshot</code>, <code>handleLeaderboard</code>,
+    <code>handleSpeedMap</code>, and <code>handleIngestRate</code>.</p>
+  </div>
+</article>
+
+<article class="query" id="q8-sse-snapshot">
+  <header>
+    <h3><a class="anchor" href="#q8-sse-snapshot">§8</a>SSE state snapshot</h3>
+    <div class="meta">
+      <span class="tag">internal/web/server.go · loadSnapshot()</span>
+      <span class="tag cadence">runs: every 200 ms per connected browser</span>
+      <span class="tag tables">tables: telemetry · laps · drivers</span>
+    </div>
+  </header>
+<pre><code class="language-sql">WITH latest AS (
+    SELECT DISTINCT ON (driver_id)
+           driver_id, ts, lap, pos_x, pos_y, speed_kph,
+           rpm, gear, throttle, brake, drs
+    FROM telemetry
+    WHERE session_id = $1
+    ORDER BY driver_id, ts DESC
+),
+lap_stats AS (
+    SELECT driver_id,
+           MIN(lap_time_ms)                                       AS best_lap_ms,
+           (ARRAY_AGG(lap_time_ms ORDER BY lap_number DESC))[1]   AS last_lap_ms
+    FROM laps
+    WHERE session_id = $1
+    GROUP BY driver_id
+)
+SELECT d.driver_id, d.code, d.team, d.color_hex,
+       l.lap, l.pos_x, l.pos_y, l.speed_kph,
+       l.rpm, l.gear, l.throttle, l.brake, l.drs,
+       COALESCE(s.best_lap_ms, 0), COALESCE(s.last_lap_ms, 0)
+FROM latest l
+JOIN drivers d ON d.driver_id = l.driver_id
+LEFT JOIN lap_stats s ON s.driver_id = l.driver_id
+ORDER BY d.driver_id;</code></pre>
+  <div class="notes">
+    <p>The centerpiece query. <code>DISTINCT ON (driver_id) … ORDER BY driver_id, ts DESC</code>
+    returns exactly one row per driver — their most recent telemetry sample — supported
+    by the <code>telemetry_session_driver_ts_idx</code> index <code>(session_id, driver_id, ts DESC)</code>
+    so the planner can do an index-only seek per group rather than scanning the partition.
+    The <code>lap_stats</code> CTE pulls Best/Last from the smaller <code>laps</code> table,
+    joined back in for the per-car telemetry panel.</p>
+    <p><em>Note:</em> the SSE feed's Best/Last fields aren't currently surfaced in the UI;
+    that's why this query still uses the original <code>ARRAY_AGG(... ORDER BY ...)[1]</code>
+    construct. If you ever wire those fields into the per-car panel, mirror the
+    <code>MAX(lap_number)</code> + self-join rewrite from §9 to stay portable across
+    Postgres-compatible engines that may not honor <code>ORDER BY</code> inside aggregates.</p>
+  </div>
+</article>
+
+<article class="query" id="q9-leaderboard">
+  <header>
+    <h3><a class="anchor" href="#q9-leaderboard">§9</a>Leaderboard with gap-to-leader</h3>
+    <div class="meta">
+      <span class="tag">internal/web/server.go · handleLeaderboard()</span>
+      <span class="tag cadence">runs: every 500 ms (HTMX polling)</span>
+      <span class="tag tables">tables: telemetry · laps · drivers</span>
+    </div>
+  </header>
+<pre><code class="language-sql">WITH latest AS (
+    SELECT DISTINCT ON (driver_id)
+           driver_id, ts, lap, track_pos
+    FROM telemetry
+    WHERE session_id = $1
+    ORDER BY driver_id, ts DESC
+),
+lap_stats AS (
+    SELECT driver_id,
+           MIN(lap_time_ms) AS best_lap_ms,
+           MAX(lap_number)  AS max_lap_number
+    FROM laps
+    WHERE session_id = $1
+    GROUP BY driver_id
+),
+last_lap AS (
+    SELECT lp.driver_id, lp.lap_time_ms AS last_lap_ms
+    FROM laps lp
+    JOIN lap_stats ls
+      ON ls.driver_id      = lp.driver_id
+     AND ls.max_lap_number = lp.lap_number
+    WHERE lp.session_id = $1
+)
+SELECT d.code, d.team, d.color_hex,
+       l.lap, l.track_pos,
+       COALESCE(s.best_lap_ms, 0),
+       COALESCE(ll.last_lap_ms, 0),
+       (MAX(l.lap + l.track_pos) OVER ()
+         - (l.lap + l.track_pos))                AS gap_laps
+FROM latest l
+JOIN drivers d ON d.driver_id = l.driver_id
+LEFT JOIN lap_stats s ON s.driver_id = l.driver_id
+LEFT JOIN last_lap  ll ON ll.driver_id = l.driver_id
+ORDER BY (l.lap + l.track_pos) DESC;</code></pre>
+  <div class="notes">
+    <p>Three CTEs plus a window function in a single round-trip. <code>lap_stats</code>
+    + <code>last_lap</code> together replace the <code>(ARRAY_AGG(... ORDER BY lap_number DESC))[1]</code>
+    construct from §8 — the rewrite is more portable across engines that may not honor
+    <code>ORDER BY</code> inside an aggregate. <code>MAX(l.lap + l.track_pos) OVER ()</code>
+    is the magic that gives every row the leader's race position, so the app can compute
+    "gap to leader" in lap-fractions; Go-side, the leader's last lap time is captured from
+    the first scanned row and used to convert lap-fractions into seconds for F1-TV-style
+    <code>+1.234s</code> formatting.</p>
+    <p><em>Returns:</em> 20 rows. Rendered into an HTML fragment by Go's <code>html/template</code>
+    and swapped into the leaderboard panel by HTMX.</p>
+  </div>
+</article>
+
+<article class="query" id="q10-speed-map">
+  <header>
+    <h3><a class="anchor" href="#q10-speed-map">§10</a>Speed-map heatmap</h3>
+    <div class="meta">
+      <span class="tag">internal/web/server.go · handleSpeedMap()</span>
+      <span class="tag cadence">runs: every 3 seconds</span>
+      <span class="tag tables">tables: telemetry</span>
+    </div>
+  </header>
+<pre><code class="language-sql">SELECT WIDTH_BUCKET(track_pos, 0, 1, 100) AS bucket,
+       AVG(speed_kph)                    AS avg_kph,
+       COUNT(*)                          AS samples
+FROM telemetry
+WHERE session_id = $1
+GROUP BY bucket
+ORDER BY bucket;</code></pre>
+  <div class="notes">
+    <p>The OLAP-flavoured one. Scans every telemetry row for the session — no
+    DISTINCT ON shortcut — and bins by 1%-of-lap <code>track_pos</code>. Returns up to
+    100 rows. The dashboard pollers turn it into the colored ribbon laid along the
+    racing line on the track map.</p>
+    <p>The query gets <em>more</em> work to do as the race progresses (more telemetry
+    rows accumulate), which makes for a good "watch the database absorb the workload"
+    demo — pair it with §11 to show the simulator's writes keep ticking at full speed
+    regardless. <em>Portability fallback:</em> if your engine doesn't have
+    <code>WIDTH_BUCKET</code>, swap to
+    <code>LEAST(99, FLOOR(track_pos * 100)::int) + 1 AS bucket</code> — same semantics,
+    simpler arithmetic.</p>
+  </div>
+</article>
+
+<article class="query" id="q11-ingest-rate">
+  <header>
+    <h3><a class="anchor" href="#q11-ingest-rate">§11</a>Live ingest rate (meta-query)</h3>
+    <div class="meta">
+      <span class="tag">internal/web/server.go · handleIngestRate()</span>
+      <span class="tag cadence">runs: every 1 second</span>
+      <span class="tag tables">tables: telemetry</span>
+    </div>
+  </header>
+<pre><code class="language-sql">SELECT
+    COUNT(*) FILTER (WHERE ts > now() - interval '1 second') AS rows_last_1s,
+    COUNT(*)                                                  AS total_rows
+FROM telemetry
+WHERE session_id = $1;</code></pre>
+  <div class="notes">
+    <p>The meta-query: the database is measuring its own ingest rate while continuing
+    to ingest. <code>COUNT(*) FILTER (WHERE ...)</code> is standard Postgres syntax that
+    computes both counts in a single index scan. Displayed in the dashboard footer so
+    the audience sees the row counter ticking up live, with every other panel still
+    refreshing concurrently.</p>
+    <p><em>Portability fallback:</em> if <code>FILTER</code> isn't supported, rewrite as
+    two scalar subqueries against the same table — slightly less elegant but
+    universally compatible.</p>
+  </div>
+</article>
+
+<script>hljs.highlightAll();</script>
+</body>
+</html>

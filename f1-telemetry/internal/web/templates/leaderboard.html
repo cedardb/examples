@@ -1,0 +1,20 @@
+<table class="lb">
+  <thead>
+    <tr>
+      <th>P</th><th>Driver</th><th>Team</th><th>Lap</th><th>Gap</th><th>Last</th><th>Best</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{range .}}
+    <tr>
+      <td>{{.Pos}}</td>
+      <td class="code"><span class="swatch" style="background:{{.Color}}"></span>{{.Code}}</td>
+      <td>{{.Team}}</td>
+      <td>{{.Lap}}</td>
+      <td class="gap">{{.Gap}}</td>
+      <td>{{.Last}}</td>
+      <td>{{.Best}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
