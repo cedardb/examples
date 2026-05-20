@@ -283,6 +283,7 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
    while (readOrder || readExecution || readCancellation) {
       auto curTime = time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
       auto limit = base + (curTime - startTime);
+      auto lastSeenOrderTs = order.timestamp;
       size_t counter = 0;
 
       // Start a transaction
@@ -291,8 +292,9 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
 
       // Write orders
       uint64_t prevTimestamp = order.timestamp;
-      while (readOrder && order.timestamp < limit) {
+      while (readOrder && order.timestamp < limit && counter <= 10000) { // Stop after a maximum of 10k order/orderbook inserts and deletes
          sendOrder(order);
+         lastSeenOrderTs = order.timestamp;
          ++counter;
 
          // Insert new order into orderbook
@@ -311,7 +313,7 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
 
       // Write executions
       prevTimestamp = execution.timestamp;
-      while (readExecution && execution.timestamp < limit) {
+      while (readExecution && execution.timestamp < lastSeenOrderTs) {
          sendExecution(execution);
          ++counter;
          if (execution.orderId != 0) // Only visible orders change the order book
@@ -327,7 +329,7 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
 
       // Write cancellations
       prevTimestamp = cancellation.timestamp;
-      while (readCancellation && cancellation.timestamp < limit) {
+      while (readCancellation && cancellation.timestamp < lastSeenOrderTs) {
          sendCancellation(cancellation);
          ++counter;
 
@@ -348,7 +350,8 @@ void NasdaqClient::runExchange(const std::string& ordersPath, const std::string&
       std::cout << "[" << PQhost(conn) << "] Messages: " << counter << std::endl;
 
       finalize(counter);
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      auto msPassed = (time_point_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()).time_since_epoch().count() - curTime) / 1000000;
+      if (msPassed < 100) std::this_thread::sleep_for(std::chrono::milliseconds(100 - msPassed));
    }
    exitPipelineMode(conn);
 
