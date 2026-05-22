@@ -96,6 +96,7 @@
   table.summary td a:hover { border-bottom-color: var(--accent); }
   table.summary .phase-W { color: var(--yellow); }
   table.summary .phase-R { color: var(--blue); }
+  table.summary .phase-S { color: var(--green); }
   article.query {
     background: var(--panel);
     border: 1px solid var(--line);
@@ -174,14 +175,14 @@
 
 <header class="page">
   <h1>SQL queries · <span class="accent">F1 telemetry × CedarDB</span></h1>
-  <span class="lede">every statement the simulator and dashboard run, what role it plays, and how often it fires.</span>
+  <span class="lede">For each SQL statement run by the simulator or dashboard: the role it plays and how often it fires</span>
 </header>
 
 <p class="intro">
   The demo's headline story is concurrent OLTP+OLAP on the same table.
-  The simulator streams ~200 rows/second into <code>telemetry</code> via the Postgres
-  <code>COPY</code> protocol; the dashboard runs five different read queries against the
-  same table — at refresh rates from 200&nbsp;ms to 3&nbsp;s — with no replicas, no
+  The simulator streams ~200 rows/second into the <code>telemetry</code> table;
+  the dashboard runs five different read queries against the
+  same table, at refresh rates from 200ms to 3s: no replicas, no
   ETL, and no batching. This page is the working catalog of those queries.
 </p>
 
@@ -196,19 +197,94 @@
     </tr>
   </thead>
   <tbody>
+    <tr><td class="phase-S">S</td><td><a href="#q0-schema-probe">Schema-presence probe</a></td><td>db.SchemaPresent</td><td>once / cold start</td><td>information_schema.tables</td></tr>
+    <tr><td class="phase-S">S</td><td><a href="#q0-apply-schema">Apply schema (idempotent DDL)</a></td><td>db.ApplySchema</td><td>once / cold start</td><td>sessions · drivers · telemetry · laps · events</td></tr>
+    <tr><td class="phase-S">S</td><td><a href="#q0-reset-schema">Reset schema (destructive)</a></td><td>db.ResetSchema</td><td>only with -reset-schema</td><td>all 5 tables</td></tr>
     <tr><td class="phase-W">W</td><td><a href="#q1-create-session">Create session</a></td><td>simulator.NewSimulator</td><td>once / race</td><td>sessions</td></tr>
     <tr><td class="phase-W">W</td><td><a href="#q2-seed-drivers">Seed drivers (batch upsert)</a></td><td>simulator.NewSimulator</td><td>20 / race</td><td>drivers</td></tr>
     <tr><td class="phase-W">W</td><td><a href="#q3-race-start-event">Race-start event</a></td><td>simulator.Run</td><td>once / race</td><td>events</td></tr>
     <tr><td class="phase-W">W</td><td><a href="#q4-telemetry-copy">Telemetry bulk INSERT (COPY)</a></td><td>simulator.Run</td><td>10 Hz · 20 rows / tick</td><td>telemetry</td></tr>
     <tr><td class="phase-W">W</td><td><a href="#q5-insert-lap">Lap-completed INSERT</a></td><td>simulator.insertLap</td><td>~1 000 / race</td><td>laps</td></tr>
     <tr><td class="phase-W">W</td><td><a href="#q6-end-session">End session</a></td><td>simulator.endSession</td><td>once / race</td><td>sessions</td></tr>
-    <tr><td class="phase-R">R</td><td><a href="#q7-pick-session">Pick current session</a></td><td>5 endpoints share this</td><td>4–5 / s combined</td><td>sessions</td></tr>
+    <tr><td class="phase-R">R</td><td><a href="#q7-pick-session">Pick current session</a></td><td>5 endpoints share this</td><td>~8 / s combined / client</td><td>sessions</td></tr>
     <tr><td class="phase-R">R</td><td><a href="#q8-sse-snapshot">SSE state snapshot</a></td><td>web.loadSnapshot</td><td>5 Hz (every 200 ms)</td><td>telemetry · laps · drivers</td></tr>
     <tr><td class="phase-R">R</td><td><a href="#q9-leaderboard">Leaderboard with gap to leader</a></td><td>web.handleLeaderboard</td><td>2 Hz (every 500 ms)</td><td>telemetry · laps · drivers</td></tr>
     <tr><td class="phase-R">R</td><td><a href="#q10-speed-map">Speed-map heatmap</a></td><td>web.handleSpeedMap</td><td>0.33 Hz (every 3 s)</td><td>telemetry</td></tr>
     <tr><td class="phase-R">R</td><td><a href="#q11-ingest-rate">Live ingest rate</a></td><td>web.handleIngestRate</td><td>1 Hz</td><td>telemetry</td></tr>
   </tbody>
 </table>
+
+<h2>Setup path · Simulator startup<span class="count">3 stages</span></h2>
+
+<article class="query" id="q0-schema-probe">
+  <header>
+    <h3><a class="anchor" href="#q0-schema-probe">§0.1</a>Schema-presence probe</h3>
+    <div class="meta">
+      <span class="tag">internal/db/schema.go · SchemaPresent()</span>
+      <span class="tag cadence">runs: once at simulator cold start</span>
+      <span class="tag tables">tables: information_schema.tables</span>
+    </div>
+  </header>
+<pre><code class="language-sql">SELECT (SELECT COUNT(*) FROM information_schema.tables
+         WHERE table_name = 'sessions') = 1;</code></pre>
+  <div class="notes">
+    <p>A cheap "have I been here before?" check the simulator logs on every cold start.
+    Purely diagnostic — <code>ApplySchema</code> is called either way, since
+    every statement in <code>schema.sql</code> is guarded with
+    <code>IF NOT EXISTS</code>. We probe <code>information_schema.tables</code> on
+    purpose: it's SQL-standard and supported by CedarDB.</p>
+  </div>
+</article>
+
+<article class="query" id="q0-apply-schema">
+  <header>
+    <h3><a class="anchor" href="#q0-apply-schema">§0.2</a>Apply schema (idempotent DDL)</h3>
+    <div class="meta">
+      <span class="tag">internal/db/schema.go · ApplySchema()</span>
+      <span class="tag cadence">runs: once at simulator cold start — ~10 statements</span>
+      <span class="tag tables">tables: sessions · drivers · telemetry · laps · events</span>
+    </div>
+  </header>
+<pre><code class="language-sql">CREATE TABLE IF NOT EXISTS sessions  ( … );
+CREATE TABLE IF NOT EXISTS drivers   ( … );
+CREATE TABLE IF NOT EXISTS telemetry ( … );
+CREATE INDEX IF NOT EXISTS telemetry_session_driver_ts_idx
+    ON telemetry (session_id, driver_id, ts DESC);
+CREATE INDEX IF NOT EXISTS telemetry_session_ts_idx
+    ON telemetry (session_id, ts DESC);
+CREATE TABLE IF NOT EXISTS laps     ( … );
+CREATE INDEX IF NOT EXISTS laps_session_lap_idx ON laps (session_id, lap_number);
+CREATE TABLE IF NOT EXISTS events    ( … );
+CREATE INDEX IF NOT EXISTS events_session_ts_idx ON events (session_id, ts DESC);</code></pre>
+  <div class="notes">
+    <p>The canonical schema lives in <code>internal/db/schema.sql</code> and is
+    embedded into the simulator binary via <code>//go:embed</code>.</p>
+    <p><em>Indexes created here are the ones every read query on this page relies
+    on:</em> <code>telemetry_session_driver_ts_idx</code> drives §8 / §9's
+    <code>DISTINCT ON (driver_id)</code> seek; <code>laps_session_lap_idx</code>
+    backs §9's <code>MAX(lap_number)</code> + self-join lookup.</p>
+  </div>
+</article>
+
+<article class="query" id="q0-reset-schema">
+  <header>
+    <h3><a class="anchor" href="#q0-reset-schema">§0.3</a>Reset schema (destructive)</h3>
+    <div class="meta">
+      <span class="tag">internal/db/schema.go · ResetSchema()</span>
+      <span class="tag cadence">runs: only when started with -reset-schema</span>
+      <span class="tag tables">tables: telemetry · laps · events · drivers · sessions</span>
+    </div>
+  </header>
+<pre><code class="language-sql">DROP TABLE IF EXISTS telemetry CASCADE;
+DROP TABLE IF EXISTS laps      CASCADE;
+DROP TABLE IF EXISTS events    CASCADE;
+DROP TABLE IF EXISTS drivers   CASCADE;
+DROP TABLE IF EXISTS sessions  CASCADE;
+-- then re-runs §0.2 to recreate everything</code></pre>
+  <div class="notes">
+    <p>Wired behind the simulator's <code>-reset-schema</code> CLI flag so it's never called accidentally.</p>
+  </div>
+</article>
 
 <h2>Write path · Simulator → CedarDB<span class="count">6 statements</span></h2>
 
@@ -272,7 +348,7 @@ VALUES ($1, now(), 'race_start', $2);</code></pre>
     <p>The <code>events</code> table is a low-volume audit log indexed
     <code>(session_id, ts DESC)</code>. <em>kind</em> is intended for an extensible set of
     values — <code>'race_start'</code>, <code>'fastest_lap'</code>, <code>'overtake'</code>,
-    <code>'drs_open'</code>, etc. — though only <code>race_start</code> is wired in today.
+    <code>'drs_open'</code>, etc.; though only <code>race_start</code> is wired in today.
     Good spot to hang future "what just happened" tickers off.</p>
   </div>
 </article>
@@ -352,7 +428,7 @@ WHERE session_id = $1;</code></pre>
     <h3><a class="anchor" href="#q7-pick-session">§7</a>Pick the current session</h3>
     <div class="meta">
       <span class="tag">server.go · shared by 5 endpoints</span>
-      <span class="tag cadence">runs: 4–5 times per second combined across endpoints</span>
+      <span class="tag cadence">runs: ~8 times per second combined per connected client</span>
       <span class="tag tables">tables: sessions</span>
     </div>
   </header>
@@ -365,9 +441,19 @@ LIMIT 1;</code></pre>
     <p>Boolean-as-sort-key trick: <code>(ended_at IS NULL) DESC</code> ranks unended (live)
     sessions above ended ones, and <code>started_at DESC</code> tiebreaks among each
     group. So the dashboard automatically follows whichever race is live right now, or
-    falls back to the most-recently-finished session if none is live. Used by
-    <code>handleTrackJSON</code>, <code>loadSnapshot</code>, <code>handleLeaderboard</code>,
-    <code>handleSpeedMap</code>, and <code>handleIngestRate</code>.</p>
+    falls back to the most-recently-finished session if none is live.</p>
+    <p><em>Cadence breakdown per connected browser:</em>
+    <code>loadSnapshot</code> (SSE) at 5 Hz,
+    <code>handleLeaderboard</code> at 2 Hz,
+    <code>handleIngestRate</code> at 1 Hz,
+    <code>handleSpeedMap</code> at ~0.33 Hz,
+    plus <code>handleTrackJSON</code> once on initial page load.
+    That's the "~8 / s combined" figure in the cadence tag.</p>
+    <p><em>One variant worth knowing about:</em> <code>handleTrackJSON</code> uses the
+    same <code>ORDER BY (ended_at IS NULL) DESC, started_at DESC LIMIT 1</code>
+    pattern but projects a single column — <code>SELECT track FROM sessions …</code>
+    — because all it needs is the track display name to regenerate the polyline
+    geometry server-side. Same plan, smaller payload.</p>
   </div>
 </article>
 
@@ -411,11 +497,6 @@ ORDER BY d.driver_id;</code></pre>
     so the planner can do an index-only seek per group rather than scanning the partition.
     The <code>lap_stats</code> CTE pulls Best/Last from the smaller <code>laps</code> table,
     joined back in for the per-car telemetry panel.</p>
-    <p><em>Note:</em> the SSE feed's Best/Last fields aren't currently surfaced in the UI;
-    that's why this query still uses the original <code>ARRAY_AGG(... ORDER BY ...)[1]</code>
-    construct. If you ever wire those fields into the per-car panel, mirror the
-    <code>MAX(lap_number)</code> + self-join rewrite from §9 to stay portable across
-    Postgres-compatible engines that may not honor <code>ORDER BY</code> inside aggregates.</p>
   </div>
 </article>
 
@@ -463,10 +544,8 @@ LEFT JOIN lap_stats s ON s.driver_id = l.driver_id
 LEFT JOIN last_lap  ll ON ll.driver_id = l.driver_id
 ORDER BY (l.lap + l.track_pos) DESC;</code></pre>
   <div class="notes">
-    <p>Three CTEs plus a window function in a single round-trip. <code>lap_stats</code>
-    + <code>last_lap</code> together replace the <code>(ARRAY_AGG(... ORDER BY lap_number DESC))[1]</code>
-    construct from §8 — the rewrite is more portable across engines that may not honor
-    <code>ORDER BY</code> inside an aggregate. <code>MAX(l.lap + l.track_pos) OVER ()</code>
+    <p>Three CTEs plus a window function in a single round-trip.
+    <code>MAX(l.lap + l.track_pos) OVER ()</code>
     is the magic that gives every row the leader's race position, so the app can compute
     "gap to leader" in lap-fractions; Go-side, the leader's last lap time is captured from
     the first scanned row and used to convert lap-fractions into seconds for F1-TV-style
@@ -500,10 +579,7 @@ ORDER BY bucket;</code></pre>
     <p>The query gets <em>more</em> work to do as the race progresses (more telemetry
     rows accumulate), which makes for a good "watch the database absorb the workload"
     demo — pair it with §11 to show the simulator's writes keep ticking at full speed
-    regardless. <em>Portability fallback:</em> if your engine doesn't have
-    <code>WIDTH_BUCKET</code>, swap to
-    <code>LEAST(99, FLOOR(track_pos * 100)::int) + 1 AS bucket</code> — same semantics,
-    simpler arithmetic.</p>
+    regardless.</p>
   </div>
 </article>
 
@@ -527,9 +603,6 @@ WHERE session_id = $1;</code></pre>
     computes both counts in a single index scan. Displayed in the dashboard footer so
     the audience sees the row counter ticking up live, with every other panel still
     refreshing concurrently.</p>
-    <p><em>Portability fallback:</em> if <code>FILTER</code> isn't supported, rewrite as
-    two scalar subqueries against the same table — slightly less elegant but
-    universally compatible.</p>
   </div>
 </article>
 
