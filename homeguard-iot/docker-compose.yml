@@ -1,0 +1,106 @@
+# Brings up CedarDB alongside the Go simulator and operator dashboard.
+#
+# IMPORTANT: the CedarDB image name and env vars below mirror the Postgres
+# image conventions. If your CedarDB image differs, adjust `image:` and the
+# DATABASE_URL accordingly — the rest of the demo is pure Postgres wire
+# protocol and should not need to change.
+
+services:
+  cedardb:
+    image: cedardb/cedardb:latest
+    container_name: hg-cedardb
+    ports:
+      - "5432:5432"
+    environment:
+      CEDAR_PASSWORD: postgres
+      VERBOSITY: DEBUG1
+      LICENSE_KEY:
+    # Schema bootstrap is handled by the simulator (it embeds schema.sql via
+    # //go:embed and applies it on first run), so we do not mount any init
+    # scripts here.
+    volumes:
+      - cedar-data:/var/lib/cedardb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d homeguard || exit 1"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+
+  simulator:
+    build: .
+    container_name: hg-simulator
+    #command: ["/app/simulator", "-households=100000", "-devices-per-household=10", "-rate=1750000", "-hz=20", "-writers=32"]
+    #command: ["/app/simulator", "-households=100000", "-devices-per-household=10", "-rate=500000", "-hz=20", "-writers=16"]
+    command: ["/app/simulator", "-households=100000", "-devices-per-household=10", "-rate=600000", "-hz=20", "-writers=16"]
+    #command: ["/app/simulator", "-households=30000", "-devices-per-household=10", "-rate=2500", "-hz=10", "-writers=4"]
+    
+    depends_on:
+      cedardb:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@cedardb:5432/postgres?sslmode=require"
+
+      # How often the storage sampler writes a row into storage_samples.
+      # Lower values → fresher gauge, more INSERTs into storage_samples.
+      # Value is any Go duration string (e.g. "5s", "30s", "1m").
+      HG_STORAGE_SAMPLER_INTERVAL: "5s"
+
+      # How many rows the ingestor accumulates before firing one
+      # pgx.CopyFrom. Bigger → better per-COPY amortization and
+      # (sometimes) higher throughput; smaller → lower end-to-end
+      # latency on the live event stream. Watch the heartbeat
+      # `lastCopy` and `delta` numbers when tuning.
+      HG_INGEST_BATCH: "25000"
+
+      # How many ingestor goroutines run CopyFrom in parallel. Default
+      # 1 is safe everywhere. Older CedarDB rejected overlapping COPYs
+      # with SQLSTATE 40P01; newer versions accept concurrent COPYs,
+      # in which case cranking this up (try 2, 4, 8) may give a
+      # meaningful throughput bump. If the heartbeat's queue=64/64
+      # ceiling disappears as you raise this, the previous bottleneck
+      # was the single ingestor (and CedarDB can take more); if queue
+      # stays pegged, CedarDB is serializing the work internally and
+      # adding ingestors won't help.
+      HG_INGESTORS: "4"
+
+      # Alert resolver. The background resolveAlertsLoop picks up the
+      # oldest active alerts every HG_RESOLVE_INTERVAL and marks them
+      # resolved/false_alarm.
+      #
+      # By default the resolver auto-tunes its per-tick LIMITs from
+      # the in-process alert generation rate and backlog (no DB-side
+      # COUNT(*) required), so the queue stays bounded as -writers
+      # and -rate scale. The two LIMIT vars are now FLOORS — auto-tune
+      # can push higher but never below them. Set HG_RESOLVE_AUTOTUNE
+      # to false to disable auto-tune (useful if you want to demo what
+      # happens to AGE/SLA when the queue grows on purpose).
+      # HG_RESOLVE_INTERVAL:   "2s"
+      # HG_RESOLVE_LOW_LIMIT:  "2000"  # floor for severity 1-2 → false_alarm
+      # HG_RESOLVE_HIGH_LIMIT: "600"   # floor for severity 3+  → resolved
+      # HG_RESOLVE_AUTOTUNE:   "true"  # auto-grow LIMITs to match gen+backlog
+    restart: on-failure
+
+  server:
+    build: .
+    container_name: hg-server
+    command: ["/app/server", "-addr=:8080"]
+    depends_on:
+      cedardb:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@cedardb:5432/postgres?sslmode=require"
+      # Dashboard polling cadences — all Go duration strings. Crank up
+      # when you want to ease the read load CedarDB has to serve next to
+      # the simulator's writes.
+      HG_SSE_INTERVAL: "1s"      # live event stream push rate
+      HG_ALERTS_REFRESH: "5s"    # active-alerts queue panel
+      HG_DRILLDOWN_REFRESH: "5s" # customer drill-down panel
+      HG_STATS_REFRESH: "1s"     # footer ingest counters
+      HG_STORAGE_REFRESH: "1s"   # storage growth gauge
+    ports:
+      - "8080:8080"
+    restart: on-failure
+
+volumes:
+  cedar-data:
+
