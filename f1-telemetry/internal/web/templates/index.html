@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F1 Telemetry — CedarDB Live Demo</title>
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --line: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #f97316;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    background: var(--bg);
+    color: var(--text);
+    /* Flex column so header/footer take natural height and <main> fills
+       whatever is left — keeps the footer on-screen at any window size. */
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+  header h1 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header h1 .logo { height: 28px; width: auto; display: block; }
+  header h1 .flag { height: 24px; width: auto; display: block; }
+  header h1 .sep { color: var(--muted); font-weight: 400; }
+  header .meta { color: var(--muted); font-size: 12px; }
+  main {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 12px;
+    padding: 12px;
+    /* Fill the space between header and footer; min-height: 0 lets the
+       grid shrink instead of overflowing when content is tall. */
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel h2 {
+    font-size: 11px;
+    margin: 0 0 8px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  /* --- Track map --- */
+  #track-map { width: 100%; height: 100%; flex: 1; }
+  #track-path { fill: none; stroke: #2d333b; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
+  #track-inner { fill: none; stroke: #1c2128; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+  .car-dot { stroke: #000; stroke-width: 0.5; }
+  .car-label { font: 600 9px ui-monospace; fill: #fff; pointer-events: none; text-anchor: middle; }
+  /* --- Right column --- */
+  .right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+  .right .panel { flex: 1; }
+  .right .panel.telemetry { flex: 1.2; overflow-y: auto; }
+  /* Leaderboard */
+  table.lb { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.lb th { text-align: left; color: var(--muted); font-weight: 400; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  table.lb td { padding: 4px 6px; border-bottom: 1px solid #1c2128; }
+  table.lb td.code { font-weight: 700; }
+  table.lb td .swatch { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 2px; vertical-align: middle; }
+  table.lb td.gap { color: var(--accent); font-variant-numeric: tabular-nums; }
+  /* Speed-map overlay: short colored segments drawn on top of the track. */
+  #speed-overlay line { stroke-linecap: round; stroke-width: 3.5; opacity: 0.85; }
+  #speed-overlay line.s-slow   { stroke: #ff5577; }
+  #speed-overlay line.s-mid    { stroke: #f4d04e; }
+  #speed-overlay line.s-fast   { stroke: #1ee2a2; }
+  #speed-overlay line.s-vfast  { stroke: #3aa6ff; }
+  footer .accent { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+  footer .docs-link { color: var(--accent); text-decoration: none; border-bottom: 1px dotted rgba(249,115,22,0.5); }
+  footer .docs-link:hover { border-bottom-color: var(--accent); }
+  /* Telemetry rows */
+  .car-row {
+    display: grid;
+    grid-template-columns: 24px 38px 1fr;
+    align-items: center;
+    padding: 4px 0;
+    gap: 8px;
+    border-bottom: 1px solid #1c2128;
+    font-size: 11px;
+  }
+  .car-row .swatch { width: 12px; height: 12px; border-radius: 2px; }
+  .car-row .code { font-weight: 700; }
+  .bars { display: grid; grid-template-columns: 60px 1fr; row-gap: 2px; column-gap: 6px; }
+  .bars .label { color: var(--muted); }
+  .bars .bar-outer { background: #0d1117; border: 1px solid var(--line); border-radius: 2px; height: 8px; overflow: hidden; }
+  .bars .bar-inner { height: 100%; }
+  .green { background: #1ee2a2; }
+  .red   { background: #ff5577; }
+  .blue  { background: #3aa6ff; }
+  .yellow{ background: #f4d04e; }
+  .drs-on  { color: #1ee2a2; font-weight: 700; }
+  .drs-off { color: #555; }
+  footer {
+    padding: 5px 20px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+    flex: 0 0 auto;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>
+    <img src="/static/cedardb-logo.svg" alt="CedarDB" class="logo">
+    <span class="sep">&nbsp;</span>
+    <img src="/static/checkered-flag.svg" alt="" class="flag" aria-hidden="true">
+    F1 TELEMETRY
+  </h1>
+  <div class="meta">
+    Session <span id="session-id">—</span> · <span id="session-track">—</span> ·
+    Lap <span id="leader-lap">0</span>/<span id="total-laps">0</span> ·
+    SSE every 200&nbsp;ms · last frame <span id="age">—</span>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Track Map · Live Positions</h2>
+    <svg id="track-map" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <!-- Checkered pattern for the finish-line marker. Pattern is in
+             user-space units so its squares scale with the track viewBox. -->
+        <pattern id="finish-check" patternUnits="userSpaceOnUse"
+                 width="6" height="6">
+          <rect width="6" height="6" fill="#ffffff"/>
+          <rect x="0" y="0" width="3" height="3" fill="#0d1117"/>
+          <rect x="3" y="3" width="3" height="3" fill="#0d1117"/>
+        </pattern>
+      </defs>
+      <path id="track-path"></path>
+      <path id="track-inner"></path>
+      <!-- Speed-map overlay: 100 short colored segments laid along the track
+           centerline, coloured by avg speed at each 1%-bucket. Populated by
+           polling /api/speed-map every few seconds. -->
+      <g id="speed-overlay"></g>
+      <!-- Checkered band across the start/finish straight, positioned by JS
+           once /track.json arrives. -->
+      <g id="finish-line-group" style="display:none">
+        <rect id="finish-line"
+              x="-16" y="-4" width="32" height="8"
+              fill="url(#finish-check)"
+              stroke="#0d1117" stroke-width="0.6"/>
+      </g>
+      <g id="cars"></g>
+    </svg>
+  </section>
+
+  <section class="right">
+    <div class="panel">
+      <h2>Leaderboard (Live)</h2>
+      <div hx-get="/api/leaderboard"
+           hx-trigger="load, every 500ms"
+           hx-swap="innerHTML">
+        <p style="color:var(--muted)">Waiting for data…</p>
+      </div>
+    </div>
+    <div class="panel telemetry">
+      <h2>Per-Car Telemetry</h2>
+      <div id="telemetry-grid"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>
+    INSERTs: <span id="ingest-rate" class="accent">— rows/sec</span> ·
+    <span id="ingest-total">— total</span> ·
+    same table also serving SSE, leaderboard, speed-map · CedarDB ·
+    <a href="/static/queries.html" target="_blank" rel="noopener"
+       class="docs-link">SQL queries&nbsp;↗</a>
+  </span>
+  <span id="conn-status">connecting…</span>
+</footer>
+
+<script>
+// One EventSource for the whole page. It carries a snapshot every 200 ms.
+// We do two things with each snapshot:
+//   1) Move the car dots on the SVG track map.
+//   2) Re-render the per-car telemetry rows.
+// The leaderboard panel uses HTMX polling instead of SSE (it's HTML, not JSON),
+// which is intentional to show both styles in one app.
+
+const svgNS = "http://www.w3.org/2000/svg";
+
+async function loadTrack() {
+  const r = await fetch("/track.json");
+  const data = await r.json();
+  const pts = data.points;
+  trackPoints = pts;  // shared with the speed-map overlay
+  // Bounding box -> viewBox scale.
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for (const [x,y] of pts) {
+    if (x<minX)minX=x; if (y<minY)minY=y;
+    if (x>maxX)maxX=x; if (y>maxY)maxY=y;
+  }
+  // Add a margin and recompute viewBox.
+  const margin = 30;
+  const vbW = (maxX-minX) + 2*margin;
+  const vbH = (maxY-minY) + 2*margin;
+  const svg = document.getElementById("track-map");
+  svg.setAttribute("viewBox", `${minX-margin} ${minY-margin} ${vbW} ${vbH}`);
+
+  const d = pts.map(([x,y],i) => `${i===0?"M":"L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ") + " Z";
+  document.getElementById("track-path").setAttribute("d", d);
+  document.getElementById("track-inner").setAttribute("d", d);
+
+  // Checkered finish line, positioned and rotated to sit across the racing
+  // line at trackPos = 0. The server hands us the start point and a unit
+  // normal vector; we turn the normal into a rotation angle and translate
+  // the pre-built <rect> into place. The rect is centered on (0,0) in its
+  // own local space so the rotation pivot is the finish-line center.
+  const fl = data.finish_line;
+  if (fl) {
+    // SVG rotate() is clockwise in screen space (Y goes down), which
+    // matches atan2(ny, nx) directly: a normal pointing +X (right) is 0°,
+    // a normal pointing +Y (down) is +90°, etc.
+    const angleDeg = Math.atan2(fl.ny, fl.nx) * 180 / Math.PI;
+    const g = document.getElementById("finish-line-group");
+    g.setAttribute("transform", `translate(${fl.x.toFixed(1)}, ${fl.y.toFixed(1)}) rotate(${angleDeg.toFixed(1)})`);
+    g.style.display = "";
+  }
+}
+
+function ensureCarNode(d) {
+  const cars = document.getElementById("cars");
+  let g = document.getElementById("car-"+d.driver_id);
+  if (g) return g;
+  g = document.createElementNS(svgNS, "g");
+  g.setAttribute("id", "car-"+d.driver_id);
+  const c = document.createElementNS(svgNS, "circle");
+  c.setAttribute("class", "car-dot");
+  c.setAttribute("r", 6);
+  c.setAttribute("fill", d.color);
+  const t = document.createElementNS(svgNS, "text");
+  t.setAttribute("class", "car-label");
+  t.setAttribute("dy", "2.5");
+  t.textContent = d.code;
+  g.appendChild(c);
+  g.appendChild(t);
+  cars.appendChild(g);
+  return g;
+}
+
+function renderCars(snap) {
+  for (const c of snap.cars) {
+    const g = ensureCarNode(c);
+    const dot = g.querySelector("circle");
+    const lbl = g.querySelector("text");
+    dot.setAttribute("cx", c.x.toFixed(2));
+    dot.setAttribute("cy", c.y.toFixed(2));
+    lbl.setAttribute("x", c.x.toFixed(2));
+    lbl.setAttribute("y", (c.y - 9).toFixed(2));
+    if (c.drs) {
+      dot.setAttribute("stroke", "#1ee2a2");
+      dot.setAttribute("stroke-width", "1.5");
+    } else {
+      dot.setAttribute("stroke", "#000");
+      dot.setAttribute("stroke-width", "0.5");
+    }
+  }
+}
+
+function renderTelemetry(snap) {
+  const root = document.getElementById("telemetry-grid");
+  // Build in one go to keep DOM thrash low.
+  const rows = snap.cars.map(c => {
+    const thr = Math.round(c.throttle*100);
+    const brk = Math.round(c.brake*100);
+    const rpm = c.rpm;
+    const rpmPct = Math.min(100, Math.max(0, (rpm-6500)/(12000-6500)*100));
+    return `
+      <div class="car-row" data-id="${c.driver_id}">
+        <div class="swatch" style="background:${c.color}"></div>
+        <div class="code">${c.code}</div>
+        <div class="bars">
+          <div class="label">SPEED</div><div>${Math.round(c.speed_kph)} kph · G${c.gear} · ${rpm} rpm</div>
+          <div class="label">THR</div><div class="bar-outer"><div class="bar-inner green" style="width:${thr}%"></div></div>
+          <div class="label">BRK</div><div class="bar-outer"><div class="bar-inner red" style="width:${brk}%"></div></div>
+          <div class="label">RPM</div><div class="bar-outer"><div class="bar-inner yellow" style="width:${rpmPct}%"></div></div>
+          <div class="label">DRS</div><div class="${c.drs?'drs-on':'drs-off'}">${c.drs?'OPEN':'closed'}</div>
+        </div>
+      </div>`;
+  }).join("");
+  root.innerHTML = rows;
+}
+
+function updateHeader(snap) {
+  document.getElementById("session-id").textContent    = snap.session.session_id;
+  document.getElementById("session-track").textContent = snap.session.track;
+  document.getElementById("total-laps").textContent    = snap.session.total_laps;
+  let leadLap = 0;
+  for (const c of snap.cars) if (c.lap > leadLap) leadLap = c.lap;
+  document.getElementById("leader-lap").textContent = leadLap;
+  document.getElementById("age").textContent = "now";
+}
+
+let es;
+function openStream() {
+  es = new EventSource("/sse/state");
+  es.onopen = () => document.getElementById("conn-status").textContent = "stream OK";
+  es.onerror = () => document.getElementById("conn-status").textContent = "stream reconnecting…";
+  es.onmessage = (e) => {
+    let snap;
+    try { snap = JSON.parse(e.data); }
+    catch { return; }
+    if (!snap.cars) return;
+    updateHeader(snap);
+    renderCars(snap);
+    renderTelemetry(snap);
+  };
+}
+
+// Track points are loaded once and reused by the speed-map overlay below.
+let trackPoints = null;
+
+// --- Speed-map overlay ----------------------------------------------------
+// Every few seconds, hit /api/speed-map (an analytical aggregation across
+// the entire `telemetry` table for this session) and recolor a strip along
+// the racing line. This is the visual proof that you can run an OLAP-style
+// query against the same table while the simulator is hammering it with
+// INSERTs.
+function speedClass(kph) {
+  if (kph < 130) return "s-slow";
+  if (kph < 200) return "s-mid";
+  if (kph < 270) return "s-fast";
+  return "s-vfast";
+}
+
+async function refreshSpeedMap() {
+  if (!trackPoints) return;
+  try {
+    const r = await fetch("/api/speed-map");
+    const data = await r.json();
+    if (!data.buckets || data.buckets.length === 0) return;
+
+    // Build a lookup: bucket index (1..100) → avg kph.
+    const kphFor = new Map();
+    for (const b of data.buckets) kphFor.set(b.bucket, b.avg_kph);
+
+    // Walk the full polyline (typically ~228 points) and emit one tiny
+    // segment per pair, colored by whichever 1% bucket that segment falls
+    // into. This gives gap-free coverage along the racing line.
+    const n = trackPoints.length;
+    const segs = [];
+    for (let i = 0; i < n; i++) {
+      const bucket = Math.min(100, Math.floor(i / n * 100) + 1);
+      const kph = kphFor.get(bucket);
+      if (kph === undefined) continue;
+      const j = (i + 1) % n;
+      const [x1, y1] = trackPoints[i];
+      const [x2, y2] = trackPoints[j];
+      segs.push(`<line class="${speedClass(kph)}" `
+        + `x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" `
+        + `x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`);
+    }
+    document.getElementById("speed-overlay").innerHTML = segs.join("");
+  } catch (e) { /* swallow — keep polling */ }
+}
+
+// --- Live ingest rate -----------------------------------------------------
+// Hits /api/ingest-rate every second. The endpoint runs a count over the
+// telemetry table while the simulator is mid-flight, which is itself the
+// punchline.
+async function refreshIngestRate() {
+  try {
+    const r = await fetch("/api/ingest-rate");
+    const data = await r.json();
+    document.getElementById("ingest-rate").textContent =
+      `${(data.rows_per_sec || 0).toLocaleString()} rows/sec`;
+    document.getElementById("ingest-total").textContent =
+      `${(data.total_rows || 0).toLocaleString()} total`;
+  } catch (e) { /* keep polling */ }
+}
+
+loadTrack().then(() => {
+  // SSE drives the per-car layer; the two analytical pollers drive the
+  // speed-map ribbon and the ingest-rate footer. All three reads run
+  // concurrently against the same telemetry table the simulator is
+  // INSERTing into.
+  openStream();
+  refreshSpeedMap();
+  setInterval(refreshSpeedMap, 3000);
+  refreshIngestRate();
+  setInterval(refreshIngestRate, 1000);
+});
+</script>
+</body>
+</html>

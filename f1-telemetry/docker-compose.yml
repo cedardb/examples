@@ -1,0 +1,54 @@
+# Brings up CedarDB alongside the Go simulator and web dashboard.
+#
+# IMPORTANT: the CedarDB image name and the env vars below reflect the
+# CedarDB Postgres-protocol container as of mid-2025. If your image differs,
+# adjust `image:` and the DATABASE_URL accordingly -- the rest of the demo
+# is purely standard Postgres wire protocol and should not need to change.
+
+services:
+  cedardb:
+    image: cedardb/cedardb:latest
+    container_name: f1-cedardb
+    # CedarDB speaks the Postgres protocol on 5432.
+    ports:
+      - "5432:5432"
+    environment:
+      # These mirror the postgres image conventions; if the CedarDB image
+      # uses different names check its docs and rename.
+      CEDAR_PASSWORD: postgres
+      VERBOSITY: DEBUG1
+    volumes:
+      - cedar-data:/var/lib/cedardb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cedar || exit 1"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+
+  simulator:
+    build: .
+    container_name: f1-simulator
+    command: ["/app/simulator", "-track=random", "-laps=50", "-hz=10"]
+    depends_on:
+      cedardb:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@cedardb:5432/postgres?sslmode=require"
+    restart: on-failure
+
+  server:
+    build: .
+    container_name: f1-server
+    command: ["/app/server", "-addr=:8080"]
+    depends_on:
+      cedardb:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@cedardb:5432/postgres?sslmode=require"
+    ports:
+      - "8080:8080"
+    restart: on-failure
+
+volumes:
+  cedar-data:
+
