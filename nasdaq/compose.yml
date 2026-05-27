@@ -35,7 +35,9 @@ services:
     depends_on:
       - cedar
     volumes:
-      - ./grafana:/etc/grafana/provisioning
+      - ./grafana/dashboards/automatic.yml:/etc/grafana/provisioning/dashboards/automatic.yml
+      - ./grafana/dashboards/NASDAQ-1732292249298.json:/etc/grafana/provisioning/dashboards/NASDAQ-1732292249298.json
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
   aichat:
     build:
       context: aichat
