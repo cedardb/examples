@@ -48,8 +48,8 @@ services:
       LLM_MODEL: anthropic/claude-sonnet-4.5
       DB_HOST: cedar
       DB_NAME: postgres
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_USER: ${GRAFANA_USER}
+      DB_PASSWORD: ${GRAFANA_USER_PWD}
     ports:
       - 127.0.0.1:8080:8080
       - "[::1]:8080:8080"
