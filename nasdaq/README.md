@@ -108,6 +108,8 @@ where prevOrder is null
 
 More analytical queries are available in [`sql/`](./sql).
 
+If you prefer other database tools like psql or DBeaver, expose the database port (5432) to localhost in `compose.yml`/`comparison.compose.yml`.
+
 ## Comparison mode
 
 Comparison mode starts CedarDB and PostgreSQL with the same CPU and memory limits, then replays the same workload into both systems.
