@@ -2,6 +2,11 @@
 
 This example live-replays the complete NASDAQ order stream from January 30, 2020, with CedarDB. For dataset background, see [the NASDAQ example dataset docs](https://cedardb.com/docs/example_datasets/nasdaq/).
 
+What's especially noteworthy here is that CedarDB is not only running the **transactional query workload**,
+inserting thousands of events every 100 ms, but also the **complex analytical queries** which feed the various
+views in the Grafana dashboard. It's an excellent illustration of the power of Hybrid Transactional/Analytical
+Processing (HTAP).
+
 ![Grafana](./grafana.png)
 
 The setup is fully dockerized. The demo stack contains:
@@ -51,20 +56,20 @@ After the parser finishes, the client loads the schema and pre-market data, then
 Useful lifecycle commands:
 
 ```shell
-./demo.sh stop
-./demo.sh clean
-./demo.sh pull
+./demo.sh stop  # Stop and remove all containers
+./demo.sh clean # Stop and remove all containers, then remove Docker volumes, including the parsed dataset
+./demo.sh pull  # Pull the latest database images
 ```
 
-`clean` removes the Docker volumes, including the parsed dataset.
-
-## Access the services
+## Access the Dashboard
 
 Grafana is exposed on http://localhost:3000.
 
 Authentication is disabled for the UI, so opening the page is enough. The dashboard is provisioned automatically.
 
 ![Grafana Instructions](./grafana_instructions.png)
+
+## Access the AI Chat
 
 The AI chat UI is exposed on http://localhost:8080.
 
