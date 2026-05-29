@@ -1,80 +1,90 @@
-drop table if exists orderbook;
-drop table if exists executions;
-drop table if exists cancellations;
-drop table if exists orders;
-drop table if exists marketMakers;
-drop table if exists stocks;
+BEGIN;
+DROP TABLE IF EXISTS cancellations;
+CREATE TABLE
+    cancellations (
+        timestamp bigint NOT NULL,
+        orderId bigint NOT NULL,
+        stockId int NOT NULL,
+        quantity int
+    );
+COMMIT;
 
-create table stocks
-(
-    stockId                     int primary key,
-    name                        text unique,
-    marketCategory              text,
-    financialStatusIndicator    text,
-    roundLotSize                int,
-    roundLotsOnly               bool,
-    issueClassification         text,
-    issueSubType                text,
-    authenticity                text,
-    shortSaleThresholdIndicator bool,
-    IPOFlag                     bool,
-    LULDReferencePriceTier      text,
-    ETPFlag                     bool,
-    ETPLeverageFactor           int,
-    InverseIndicator            bool
-);
+BEGIN;
+DROP TABLE IF EXISTS executions;
+CREATE TABLE
+    executions (
+        timestamp bigint NOT NULL,
+        orderId bigint,
+        stockId int NOT NULL,
+        quantity int NOT NULL,
+        price numeric(10, 4)
+    );
+COMMIT;
 
-create table marketmakers
-(
-    timestamp   bigint,
-    stockId     int,
-    name        text,
-    isPrimary   bool,
-    mode        text,
-    state       text
-);
+BEGIN;
+DROP TABLE IF EXISTS marketMakers;
+CREATE TABLE
+    marketmakers (
+        timestamp bigint,
+        stockId int,
+        name text,
+        isPrimary bool,
+        MODE text,
+        state text
+    );
+COMMIT;
 
-create table orders
-(
-    stockId     int not null,
-    timestamp   bigint not null,
-    orderId     bigint primary key not null,
-    side        text,
-    quantity    int not null,
-    price       numeric(10,4) not null,
-    attribution text,
-    prevOrder   bigint
-);
+BEGIN;
+DROP TABLE IF EXISTS orderbook;
+CREATE TABLE
+    orderbook (
+        orderId bigint,
+        stockId int,
+        side text,
+        price numeric(10, 4),
+        quantity int,
+        PRIMARY KEY (orderid, price)
+    );
+COMMIT;
 
-create table executions
-(
-    timestamp   bigint not null,
-    orderId     bigint,
-    stockId     int not null,
-    quantity    int not null,
-    price       numeric(10,4)
-);
+BEGIN;
+DROP TABLE IF EXISTS orders;
+CREATE TABLE
+    orders (
+        stockId int NOT NULL,
+        timestamp bigint NOT NULL,
+        orderId bigint PRIMARY KEY NOT NULL,
+        side text,
+        quantity int NOT NULL,
+        price numeric(10, 4) NOT NULL,
+        attribution text,
+        prevOrder bigint
+    );
+COMMIT;
 
-create table cancellations
-(
-    timestamp   bigint not null,
-    orderId     bigint not null,
-    stockId     int not null,
-    quantity    int
-);
+BEGIN;
+DROP TABLE IF EXISTS stocks;
+CREATE TABLE
+    stocks (
+        stockId int PRIMARY KEY,
+        name text UNIQUE,
+        marketCategory text,
+        financialStatusIndicator text,
+        roundLotSize int,
+        roundLotsOnly bool,
+        issueClassification text,
+        issueSubType text,
+        authenticity text,
+        shortSaleThresholdIndicator bool,
+        IPOFlag bool,
+        LULDReferencePriceTier text,
+        ETPFlag bool,
+        ETPLeverageFactor int,
+        InverseIndicator bool
+    );
+COMMIT;
 
-create table orderbook
-(
-    orderId     bigint,
-    stockId     int,
-    side        text,
-    price       numeric(10,4),
-    quantity    int,
-    primary key(orderid, price)
-);
-commit;
-
-create index on orderbook(orderId);
-create index on cancellations(timestamp);
-create index on executions(timestamp);
-create index on orders(timestamp);
+CREATE INDEX ON cancellations (timestamp);
+CREATE INDEX ON executions (timestamp);
+CREATE INDEX ON orderbook (orderId);
+CREATE INDEX ON orders (timestamp);
