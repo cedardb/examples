@@ -1,0 +1,32 @@
+{{if . }}
+<table class="alerts">
+  <thead>
+    <tr>
+      <th>Sev</th>
+      <th>Household</th>
+      <th>Plan</th>
+      <th>Region · Dispatch</th>
+      <th>Detail</th>
+      <th>Age</th>
+      <th>SLA</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{range .}}
+    <tr class="sev{{.Severity}}">
+      <td class="sev">{{.Severity}}</td>
+      <td><span class="code">#{{.HouseholdID}}</span></td>
+      <td>{{.PlanName}}</td>
+      <td><span class="code">{{.RegionName}} · {{.Dispatch}}</span></td>
+      <td class="detail">{{.Detail}}</td>
+      <td class="sla">{{.AgeFmt}}</td>
+      <td class="sla{{if .Breached}} breached{{else if le .SLARemaining 10}} warn{{end}}">
+        {{if .Breached}}+{{.SLAFmt}} OVER{{else}}{{.SLAFmt}} left{{end}}
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted">no active alerts right now — system clean.</p>
+{{end}}

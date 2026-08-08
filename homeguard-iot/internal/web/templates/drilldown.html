@@ -1,0 +1,25 @@
+<div class="drill-hdr">
+  <span class="accent">#{{.HouseholdID}}</span>
+  <span>addr&nbsp;<span class="muted">{{.Address}}</span></span>
+  <span>{{.Plan}}&nbsp;<span class="muted">(SLA&nbsp;{{.SLASec}}s)</span></span>
+  <span>{{.Region}}&nbsp;·&nbsp;{{.Dispatch}}</span>
+  <span class="{{if .Armed}}armed{{else}}disarmed{{end}}">
+    {{if .Armed}}● ARMED{{else}}○ disarmed{{end}}
+  </span>
+</div>
+{{if .Events }}
+<table class="drill">
+  <tbody>
+  {{range .Events}}
+    <tr class="{{if ge .Severity 4}}sev-high{{end}}">
+      <td class="ts">{{.Ts}}</td>
+      <td class="dev">{{.Code}}</td>
+      <td class="where">{{.Location}}</td>
+      <td>{{if eq .Kind 0}}heartbeat{{else if eq .Kind 1}}TRIGGERED{{else if eq .Kind 2}}battery low{{else if eq .Kind 3}}offline{{else if eq .Kind 4}}TAMPER{{else}}?{{end}}{{if gt .Severity 0}} · sev {{.Severity}}{{end}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted">no recent events for this household.</p>
+{{end}}

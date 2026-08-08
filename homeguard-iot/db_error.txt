@@ -1,0 +1,25 @@
+hg-cedardb    | 2026-05-19 19:58:46.272801386 UTC    DEBUG1:  connection 1084378400 terminated
+hg-simulator  | 2026/05/19 19:58:48 simulator running: tickHz=10  target=2500 ev/s  per-tick=250  fleet=285028 devices
+hg-simulator  | 2026/05/19 19:58:49 len(rows): 254
+hg-cedardb    | 2026-05-19 19:58:49.038975971 UTC    ERROR:   unable to cast from void to bigint
+hg-cedardb    | Input data does not match the expected type or input format. Docs: https://cedardb.com/docs/references/datatypes/
+hg-cedardb    | 2026-05-19 19:58:49.039580971 UTC    ERROR:   invalid message in simple query mode
+hg-cedardb    | 2026-05-19 19:58:49.039624013 UTC    ERROR:   invalid message in simple query mode
+hg-simulator  | 2026/05/19 19:58:49 copy events: ERROR: unable to cast from void to bigint (SQLSTATE 42804)
+hg-simulator  | 2026/05/19 19:58:49 insert alert: ERROR: invalid message in simple query mode (SQLSTATE 08P01)
+hg-simulator  | 2026/05/19 19:58:49 insert alert: ERROR: invalid message in simple query mode (SQLSTATE 08P01)
+hg-simulator  | 2026/05/19 19:58:49 len(rows): 256
+hg-cedardb    | 2026-05-19 19:58:49.149095304 UTC    ERROR:   unable to cast from void to bigint
+hg-cedardb    | Input data does not match the expected type or input format. Docs: https://cedardb.com/docs/references/datatypes/
+hg-simulator  | panic: runtime error: index out of range [0] with length 0
+hg-simulator  |
+hg-simulator  | goroutine 441 [running]:
+hg-simulator  | github.com/jackc/pgx/v5.(*copyFrom).buildCopyBuf(0x40002030e0, {0x400009c400?, 0x0?, 0x0?}, 0x400243e280)
+hg-simulator  |     /go/pkg/mod/github.com/jackc/pgx/v5@v5.6.0/copy_from.go:235 +0x2f4
+hg-simulator  | github.com/jackc/pgx/v5.(*copyFrom).run.func1()
+hg-simulator  |     /go/pkg/mod/github.com/jackc/pgx/v5@v5.6.0/copy_from.go:177 +0x1c4
+hg-simulator  | created by github.com/jackc/pgx/v5.(*copyFrom).run in goroutine 1
+hg-simulator  |     /go/pkg/mod/github.com/jackc/pgx/v5@v5.6.0/copy_from.go:164 +0x3c0
+hg-cedardb    | 2026-05-19 19:58:49.158704471 UTC    LOG:     recv: Connection reset by peer
+hg-cedardb    | 2026-05-19 19:58:49.158726721 UTC    ERROR:   unable to read from client
+

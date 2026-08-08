@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HomeGuard IoT — SQL queries reference</title>
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c2128;
+    --line: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #FB773E;
+    --green: #1ee2a2;
+    --red:   #ff5577;
+    --yellow:#f4d04e;
+    --blue:  #3aa6ff;
+    --purple:#9966ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding-bottom: 60px;
+  }
+
+  /* --- Header ---------------------------------------------------------- */
+  header {
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header h1 .logo { height: 28px; }
+  header h1 .sep  { color: var(--muted); font-weight: 400; }
+  header .back    { font-size: 12px; color: var(--accent); text-decoration: none; border-bottom: 1px dotted rgba(251,119,62,0.5); }
+  header .back:hover { border-bottom-color: var(--accent); }
+
+  /* --- Intro / TOC ----------------------------------------------------- */
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 28px;
+  }
+  .intro {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 6px 0 26px;
+    max-width: 880px;
+  }
+  .intro strong { color: var(--text); }
+  .intro a { color: var(--accent); }
+
+  .toc {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 32px;
+    font-size: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 24px;
+  }
+  .toc h3 {
+    grid-column: 1 / -1;
+    font-size: 11px;
+    margin: 0 0 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover { color: var(--accent); }
+  .toc .sec { color: var(--muted); margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+  /* --- Section headers ------------------------------------------------- */
+  h2.section {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+    margin: 38px 0 16px;
+  }
+  h2.section .count { color: var(--muted); font-weight: 400; margin-left: 8px; font-size: 11px; }
+
+  /* --- Query card ------------------------------------------------------ */
+  .q {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+  }
+  .q-hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 10px;
+  }
+  .q-hdr h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .q-hdr h3 a { color: inherit; text-decoration: none; }
+  .q-hdr h3 a:hover { color: var(--accent); }
+  .q-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .q-meta .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+  .pill.freq-hot     { color: var(--red);    border-color: rgba(255,85,119,0.4); }
+  .pill.freq-fast    { color: var(--yellow); border-color: rgba(244,208,78,0.4); }
+  .pill.freq-medium  { color: var(--blue);   border-color: rgba(58,166,255,0.4); }
+  .pill.freq-slow    { color: var(--green);  border-color: rgba(30,226,162,0.4); }
+  .pill.freq-once    { color: var(--purple); border-color: rgba(153,102,255,0.4); }
+  .pill.src          { color: var(--muted); }
+
+  .q-explain {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  .q-explain strong { color: var(--text); }
+
+  pre[class*="language-"] {
+    margin: 0;
+    border-radius: 6px;
+    font-size: 12.5px !important;
+    background: #0d1117 !important;
+    border: 1px solid var(--line);
+  }
+  code[class*="language-"], pre[class*="language-"] {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace !important;
+  }
+
+  /* --- Legend ---------------------------------------------------------- */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin: 0 0 22px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .legend .pill { font-size: 11px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>
+    <img src="/static/cedardb-logo.svg" alt="CedarDB" class="logo">
+    <span class="sep">&nbsp;</span>
+    HOMEGUARD&nbsp;IoT&nbsp;·&nbsp;SQL&nbsp;QUERIES
+  </h1>
+  <a class="back" href="/">&larr; back to operator console</a>
+</header>
+
+<main>
+
+<p class="intro">
+  Every SQL statement the simulator and dashboard run against CedarDB, in
+  one place. The interesting bit isn't any individual query — it's that
+  <strong>all of these run concurrently against the same instance</strong>:
+  N writer goroutines are <code>CopyFrom</code>-ing into <code>events</code>
+  at up to ~500 K events/sec (≈ 3 TB/day uncompressed) while four
+  different read paths (active-alerts queue, live event stream, customer
+  drill-down, ingest stats) are joining across the same hot table and the
+  normalized dimensions at 200 ms – 2 s refresh cadences. The whole pitch
+  is collapsing the BigQuery + Pub/Sub-plus-KV split onto one database
+  with real joins and no replication lag.
+</p>
+<p class="intro">
+  <strong>Tuning the cadences.</strong> Every "refresh N s" pill below is
+  an env-var-driven default — set <code>HG_ALERTS_REFRESH</code>,
+  <code>HG_DRILLDOWN_REFRESH</code>, <code>HG_STATS_REFRESH</code>,
+  <code>HG_STORAGE_REFRESH</code>, <code>HG_SSE_INTERVAL</code>
+  (on the server container), or <code>HG_STORAGE_SAMPLER_INTERVAL</code>
+  (on the simulator container) to any Go duration string (e.g.
+  <code>"500ms"</code>, <code>"2s"</code>, <code>"30s"</code>) to dial
+  the read pressure CedarDB has to serve next to the ingest stream.
+</p>
+
+<div class="legend">
+  <span class="pill freq-hot">hot · every tick (10 Hz)</span>
+  <span class="pill freq-fast">fast · 200 ms – 1 s</span>
+  <span class="pill freq-medium">medium · 1 – 2 s</span>
+  <span class="pill freq-slow">slow · 2 s+ background</span>
+  <span class="pill freq-once">once · startup</span>
+</div>
+
+<nav class="toc">
+  <h3>Contents</h3>
+  <div>
+    <a href="#hot"><span class="sec">1.</span>Hot write path</a><br>
+    <a href="#dashboard"><span class="sec">2.</span>Dashboard reads</a><br>
+    <a href="#background"><span class="sec">3.</span>Background maintenance</a>
+  </div>
+  <div>
+    <a href="#startup"><span class="sec">4.</span>Startup &amp; bootstrap</a><br>
+    <a href="#reset"><span class="sec">5.</span>Schema reset</a>
+  </div>
+</nav>
+
+<!-- ================================================================== -->
+<h2 class="section" id="hot">1. Hot write path<span class="count">2 queries — drives the firehose</span></h2>
+
+<div class="q" id="copy-events">
+  <div class="q-hdr">
+    <h3><a href="#copy-events">COPY events (fan-in, single ingestor)</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-hot">~20 flushes/s · ≤ 10K rows each</span>
+      <span class="pill">up to ~500 K ev/s</span>
+      <span class="pill src">internal/sim/simulator.go · ingestorLoop()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    The firehose. <code>-writers</code> producer goroutines partition
+    the device fleet, build row batches, and push them onto a buffered
+    channel. <strong>A single ingestor goroutine</strong> drains the
+    channel, coalesces up to 10 000 rows (or every 50 ms, whichever
+    comes first), and runs one binary <code>CopyFrom</code>. This
+    sidesteps CedarDB's <em>"cannot start bulk operation until previous
+    bulk operation has become globally visible"</em> error (SQLSTATE
+    40P01) that fires when more than one goroutine COPYs in parallel,
+    while still keeping the binary protocol's ~3× wire and parsing
+    advantage over multi-row INSERT under simple-query mode.
+    <code>event_id</code> is an <code>atomic.Int64</code> seeded from
+    <code>MAX(event_id)</code> at startup, so producers share the id
+    space without locking — the column is plain <code>BIGINT</code>,
+    not <code>BIGSERIAL</code> (CedarDB rejects COPY for sequence-
+    defaulted columns with "unable to cast from void to bigint").
+  </p>
+<pre><code class="language-sql">-- One round trip per ingestor flush (≤ 10K rows, or every 50ms).
+COPY events (
+    event_id, device_id, household_id, ts,
+    kind, severity, value, battery_pct, rssi_dbm
+) FROM STDIN BINARY;
+-- ...one binary tuple per buffered event...</code></pre>
+  <p class="q-explain" style="margin-top:8px">
+    On startup, the simulator runs one read to seed the id counter:
+  </p>
+<pre><code class="language-sql">SELECT COALESCE(MAX(event_id), 0) FROM events;</code></pre>
+</div>
+
+<div class="q" id="insert-alert">
+  <div class="q-hdr">
+    <h3><a href="#insert-alert">Insert one alert</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-fast">~10–30/s</span>
+      <span class="pill">1 row/call</span>
+      <span class="pill src">internal/sim/simulator.go · fireAlert()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Called inline from <code>emitTick</code> whenever <code>EvaluateAlert</code>
+    in <code>rules.go</code> promotes a triggered/tamper event to an
+    operator-actionable alert. <code>status</code> starts <code>'active'</code>; the
+    background <code>resolveAlertsLoop</code> later marks it resolved or
+    false_alarm.
+  </p>
+<pre><code class="language-sql">INSERT INTO alerts (
+    household_id,
+    triggered_event_id,
+    raised_at,
+    severity,
+    status,
+    detail
+)
+VALUES ($1, 0, now(), $2, 'active', $3);</code></pre>
+</div>
+
+<!-- ================================================================== -->
+<h2 class="section" id="dashboard">2. Dashboard reads<span class="count">9 queries — the demo story</span></h2>
+
+<div class="q" id="active-alerts">
+  <div class="q-hdr">
+    <h3><a href="#active-alerts">Active-alerts queue (SLA-aware)</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-medium">every 1 s</span>
+      <span class="pill">joins 4 tables</span>
+      <span class="pill src">internal/web/server.go · handleAlerts()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    The top panel of the dashboard. <strong>Joins alerts × households × plans
+    × regions</strong> so the SLA countdown
+    (<code>plan.sla_seconds − age</code>) and the dispatch-center attribution
+    are computed by the database, not the app. Ordered by severity DESC
+    then raised_at ASC — escalations first, then oldest-of-equal-severity.
+  </p>
+<pre><code class="language-sql">SELECT a.alert_id,
+       a.severity,
+       a.detail,
+       EXTRACT(EPOCH FROM (now() - a.raised_at))::int AS age_s,
+       p.sla_seconds,
+       p.sla_seconds
+         - EXTRACT(EPOCH FROM (now() - a.raised_at))::int AS sla_remaining,
+       h.household_id,
+       h.address_hash,
+       p.name AS plan_name,
+       r.name AS region_name,
+       r.dispatch_center
+FROM   alerts     a
+JOIN   households h ON h.household_id = a.household_id
+JOIN   plans      p ON p.plan_id      = h.plan_id
+JOIN   regions    r ON r.region_id    = h.region_id
+WHERE  a.status = 'active'
+ORDER  BY a.severity DESC, a.raised_at ASC
+LIMIT  25;</code></pre>
+</div>
+
+<div class="q" id="event-stream">
+  <div class="q-hdr">
+    <h3><a href="#event-stream">Live event stream (non-heartbeat)</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-fast">SSE every 200 ms</span>
+      <span class="pill">joins 5 tables</span>
+      <span class="pill src">internal/web/server.go · pushEventStream()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Bottom-left panel, the ticker tape. <strong>Joins events × devices ×
+    device_types × households × regions</strong> so each row renders with a
+    human-readable device code, location and region. The
+    <code>WHERE&nbsp;e.kind&nbsp;&gt;&nbsp;0</code> filter drops heartbeats and
+    rides the <code>events_kind_ts_idx</code> index.
+  </p>
+<pre><code class="language-sql">SELECT e.event_id,
+       e.ts,
+       e.household_id,
+       h.address_hash,
+       dt.code,
+       d.location,
+       e.kind,
+       e.severity,
+       COALESCE(e.battery_pct, -1),
+       r.name
+FROM   events       e
+JOIN   devices      d  ON d.device_id      = e.device_id
+JOIN   device_types dt ON dt.device_type_id = d.device_type_id
+JOIN   households   h  ON h.household_id   = e.household_id
+JOIN   regions      r  ON r.region_id      = h.region_id
+WHERE  e.kind &gt; 0
+ORDER  BY e.ts DESC
+LIMIT  25;</code></pre>
+</div>
+
+<div class="q" id="drill-pick">
+  <div class="q-hdr">
+    <h3><a href="#drill-pick">Drill-down: pick the household</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-medium">every 2 s</span>
+      <span class="pill">first step of 3</span>
+      <span class="pill src">internal/web/server.go · handleDrilldown()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Bottom-right panel auto-rotates to whichever household has the
+    highest-severity currently-active alert. Severity DESC then raised_at
+    ASC mirrors the operator's actual triage order.
+  </p>
+<pre><code class="language-sql">SELECT a.household_id
+FROM   alerts a
+WHERE  a.status = 'active'
+ORDER  BY a.severity DESC, a.raised_at ASC
+LIMIT  1;</code></pre>
+</div>
+
+<div class="q" id="drill-fallback">
+  <div class="q-hdr">
+    <h3><a href="#drill-fallback">Drill-down: fallback household</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-medium">when no active alerts</span>
+      <span class="pill">GROUP BY on hot table</span>
+      <span class="pill src">internal/web/server.go · handleDrilldown()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Runs only when the first query found no active alerts — picks the
+    chattiest household in the last 5 minutes so the drill-down panel never
+    sits empty during a demo. A small but real aggregate over the hot
+    table.
+  </p>
+<pre><code class="language-sql">SELECT household_id
+FROM   events
+WHERE  ts &gt; now() - interval '5 minutes'
+GROUP  BY household_id
+ORDER  BY COUNT(*) DESC
+LIMIT  1;</code></pre>
+</div>
+
+<div class="q" id="drill-meta">
+  <div class="q-hdr">
+    <h3><a href="#drill-meta">Drill-down: household header</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-medium">every 2 s</span>
+      <span class="pill">3-way join</span>
+      <span class="pill src">internal/web/server.go · handleDrilldown()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Pulls the household's plan + region + dispatch center to render the
+    drill-down panel header (plan name, SLA seconds, armed state, region
+    DC).
+  </p>
+<pre><code class="language-sql">SELECT h.address_hash,
+       h.armed,
+       p.name,
+       p.sla_seconds,
+       r.name,
+       r.dispatch_center
+FROM   households h
+JOIN   plans      p ON p.plan_id   = h.plan_id
+JOIN   regions    r ON r.region_id = h.region_id
+WHERE  h.household_id = $1;</code></pre>
+</div>
+
+<div class="q" id="drill-events">
+  <div class="q-hdr">
+    <h3><a href="#drill-events">Drill-down: last 20 events</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-medium">every 2 s</span>
+      <span class="pill">uses events_household_ts_idx</span>
+      <span class="pill src">internal/web/server.go · handleDrilldown()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    The "what's going on at this household right now" panel. Indexed on
+    <code>events (household_id, ts DESC)</code> so the LIMIT 20 returns
+    instantly even with the table at billion-row scale.
+  </p>
+<pre><code class="language-sql">SELECT e.ts,
+       dt.code,
+       d.location,
+       e.kind,
+       e.severity,
+       COALESCE(e.battery_pct, -1)
+FROM   events       e
+JOIN   devices      d  ON d.device_id       = e.device_id
+JOIN   device_types dt ON dt.device_type_id = d.device_type_id
+WHERE  e.household_id = $1
+ORDER  BY e.ts DESC
+LIMIT  20;</code></pre>
+</div>
+
+<div class="q" id="stats-events">
+  <div class="q-hdr">
+    <h3><a href="#stats-events">Footer: ingest rate + total events</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-medium">every HG_STATS_REFRESH</span>
+      <span class="pill">storage_samples · ≤ a few hundred rows</span>
+      <span class="pill src">internal/web/server.go · handleStats()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    The two most recent <code>storage_samples</code> rows answer both
+    "how many rows are in events" and "how fast are they growing": the
+    table is just <code>(sampled_at, uncompressed_bytes)</code> pairs
+    the simulator writes every <code>HG_STORAGE_SAMPLER_INTERVAL</code>
+    from its in-process atomic counter, so the delta-over-time gives
+    you events/sec without ever touching <code>events</code>. Original
+    iterations of this query did <code>COUNT(*) FILTER (WHERE ts &gt;
+    now() - interval '1 second')</code> on events directly — but
+    without an <code>events (ts DESC)</code> index that's a full table
+    scan, which at billion-row scale takes long enough to make the
+    footer freeze. (The published <code>rows_per_sec</code> is a
+    sample-interval average rather than a strict 1-second window.)
+  </p>
+<pre><code class="language-sql">SELECT
+    (SELECT uncompressed_bytes FROM storage_samples
+         ORDER BY sampled_at DESC LIMIT 1) AS latest_bytes,
+    (SELECT sampled_at         FROM storage_samples
+         ORDER BY sampled_at DESC LIMIT 1) AS latest_ts,
+    (SELECT uncompressed_bytes FROM storage_samples
+         WHERE sampled_at &lt; (SELECT MAX(sampled_at) FROM storage_samples)
+         ORDER BY sampled_at DESC LIMIT 1) AS prior_bytes,
+    (SELECT sampled_at         FROM storage_samples
+         WHERE sampled_at &lt; (SELECT MAX(sampled_at) FROM storage_samples)
+         ORDER BY sampled_at DESC LIMIT 1) AS prior_ts;
+-- total_events  = latest_bytes / 48
+-- rows_per_sec  = (latest_bytes - prior_bytes) / dt / 48</code></pre>
+</div>
+
+<div class="q" id="stats-alerts">
+  <div class="q-hdr">
+    <h3><a href="#stats-alerts">Footer: active / total alerts</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-medium">every 1 s</span>
+      <span class="pill">small table</span>
+      <span class="pill src">internal/web/server.go · handleStats()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Same shape as the events counter but over the alerts table.
+  </p>
+<pre><code class="language-sql">SELECT
+    COUNT(*) FILTER (WHERE status = 'active') AS active,
+    COUNT(*)                                  AS total
+FROM alerts;</code></pre>
+</div>
+
+<div class="q" id="storage-rates">
+  <div class="q-hdr">
+    <h3><a href="#storage-rates">Storage gauge: latest size + 1m / 5m / 15m rates</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-medium">every 1 s</span>
+      <span class="pill">8 subselects · one round trip</span>
+      <span class="pill src">internal/web/server.go · handleStorage()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Feeds the Storage Growth gauge. Picks the freshest sample and, for
+    each window, the freshest sample <em>at or before</em> the
+    window-start cutoff — handles uneven sampler timing without lying
+    about the elapsed seconds (the rate is computed in Go from the two
+    timestamps the query returns, not assumed). Reads only the
+    <code>storage_samples</code> table; the underlying compression view
+    is hit once every 5 s by the sampler, not here.
+  </p>
+<pre><code class="language-sql">SELECT
+    (SELECT uncompressed_bytes FROM storage_samples
+         ORDER BY sampled_at DESC LIMIT 1) AS latest_bytes,
+    (SELECT sampled_at         FROM storage_samples
+         ORDER BY sampled_at DESC LIMIT 1) AS latest_ts,
+
+    (SELECT uncompressed_bytes FROM storage_samples
+         WHERE sampled_at &lt;= now() - interval '1 minute'
+         ORDER BY sampled_at DESC LIMIT 1) AS bytes_1m,
+    (SELECT sampled_at         FROM storage_samples
+         WHERE sampled_at &lt;= now() - interval '1 minute'
+         ORDER BY sampled_at DESC LIMIT 1) AS ts_1m,
+
+    (SELECT uncompressed_bytes FROM storage_samples
+         WHERE sampled_at &lt;= now() - interval '5 minutes'
+         ORDER BY sampled_at DESC LIMIT 1) AS bytes_5m,
+    (SELECT sampled_at         FROM storage_samples
+         WHERE sampled_at &lt;= now() - interval '5 minutes'
+         ORDER BY sampled_at DESC LIMIT 1) AS ts_5m,
+
+    (SELECT uncompressed_bytes FROM storage_samples
+         WHERE sampled_at &lt;= now() - interval '15 minutes'
+         ORDER BY sampled_at DESC LIMIT 1) AS bytes_15m,
+    (SELECT sampled_at         FROM storage_samples
+         WHERE sampled_at &lt;= now() - interval '15 minutes'
+         ORDER BY sampled_at DESC LIMIT 1) AS ts_15m;</code></pre>
+</div>
+
+<!-- ================================================================== -->
+<h2 class="section" id="background">3. Background maintenance<span class="count">4 queries — keep the demo dynamic</span></h2>
+
+<div class="q" id="resolve-low">
+  <div class="q-hdr">
+    <h3><a href="#resolve-low">Resolve low-severity alerts (false alarm)</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-slow">every 2 s</span>
+      <span class="pill">LIMIT 2000 per tick</span>
+      <span class="pill src">internal/sim/simulator.go · resolveAlertsLoop()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Severity 1–2 alerts age out as false_alarm. Without this the operator
+    queue would just grow forever during a long-running demo.
+  </p>
+<pre><code class="language-sql">UPDATE alerts
+SET status        = 'false_alarm',
+    resolved_at   = now(),
+    resolution_ms = (EXTRACT(EPOCH FROM (now() - raised_at)) * 1000)::int
+WHERE alert_id IN (
+    SELECT alert_id
+    FROM   alerts
+    WHERE  status = 'active' AND severity &lt;= 2
+    ORDER  BY raised_at ASC
+    LIMIT  2000
+);</code></pre>
+</div>
+
+<div class="q" id="resolve-high">
+  <div class="q-hdr">
+    <h3><a href="#resolve-high">Resolve high-severity alerts (dispatch)</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-slow">every 2 s</span>
+      <span class="pill">LIMIT 600 per tick</span>
+      <span class="pill src">internal/sim/simulator.go · resolveAlertsLoop()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Severity 3+ alerts only get cleared after they've sat in the queue
+    for &gt; 20 seconds — gives the operator panel something to look at
+    before the simulated dispatch fires.
+  </p>
+<pre><code class="language-sql">UPDATE alerts
+SET status        = 'resolved',
+    resolved_at   = now(),
+    resolution_ms = (EXTRACT(EPOCH FROM (now() - raised_at)) * 1000)::int
+WHERE alert_id IN (
+    SELECT alert_id
+    FROM   alerts
+    WHERE  status = 'active' AND severity &gt;= 3
+      AND  raised_at &lt; now() - interval '20 seconds'
+    ORDER  BY raised_at ASC
+    LIMIT  600
+);</code></pre>
+</div>
+
+<div class="q" id="armed-shuffle">
+  <div class="q-hdr">
+    <h3><a href="#armed-shuffle">Shuffle households' armed state</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-slow">every ~10 s · batched</span>
+      <span class="pill">PK update · ~1 500 rows/round</span>
+      <span class="pill src">internal/sim/simulator.go · shuffleArmedState()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Flips ~5 % of households armed/disarmed each round, sent as a single
+    <code>pgx.Batch</code>. Keeps the rules engine outputs varying — door
+    opens flip between "routine" and "alarmable" without restarting the
+    sim.
+  </p>
+<pre><code class="language-sql">UPDATE households
+SET    armed = $1
+WHERE  household_id = $2;</code></pre>
+</div>
+
+<div class="q" id="storage-sample-insert">
+  <div class="q-hdr">
+    <h3><a href="#storage-sample-insert">Sampler: record table-size sample</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-slow">every 5 s</span>
+      <span class="pill">1 row/call · no read needed</span>
+      <span class="pill src">internal/sim/simulator.go · storageSamplerLoop()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    The size value is <code>48 × s.eventID.Load()</code> — the in-process
+    atomic counter the producers increment per generated row, no DB
+    query needed. Earlier iterations polled
+    <code>cedardb_compression_info</code> (laggy because it only
+    reflects rows packed into column-store blocks) and then
+    <code>COUNT(*) FROM events</code> (exact but increasingly expensive
+    as the table grows past a billion rows, and a likely cause of write
+    stalls because the long scan held an MVCC snapshot). The atomic
+    counter is exact for rows that producers <em>tried</em> to write —
+    diverges from the table count only by the channel queue plus the
+    in-flight COPY batch (≤ ~160 K rows ≈ 8 MB at the configured
+    backpressure ceiling). <code>sampled_at</code> is the table's PK
+    and is unique at the 5 s sampler cadence (microsecond resolution).
+  </p>
+<pre><code class="language-sql">INSERT INTO storage_samples (sampled_at, uncompressed_bytes)
+VALUES (now(), $1);</code></pre>
+</div>
+
+<!-- ================================================================== -->
+<h2 class="section" id="startup">4. Startup &amp; bootstrap<span class="count">5 queries — once per cold start</span></h2>
+
+<div class="q" id="schema-present">
+  <div class="q-hdr">
+    <h3><a href="#schema-present">Probe: is the schema present?</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-once">once</span>
+      <span class="pill">information_schema</span>
+      <span class="pill src">internal/db/schema.go · SchemaPresent()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Diagnostic log only — we always call <code>ApplySchema</code> anyway
+    because the file is idempotent (CREATE TABLE IF NOT EXISTS on
+    everything).
+  </p>
+<pre><code class="language-sql">SELECT (
+    SELECT COUNT(*) FROM information_schema.tables
+    WHERE  table_name = 'households'
+) = 1;</code></pre>
+</div>
+
+<div class="q" id="apply-schema">
+  <div class="q-hdr">
+    <h3><a href="#apply-schema">Apply schema (DDL, one stmt at a time)</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-once">once</span>
+      <span class="pill">~14 statements</span>
+      <span class="pill src">internal/db/schema.go · ApplySchema() · schema.sql</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    The embedded <code>schema.sql</code> is split on <code>;</code> and each
+    statement is run individually under simple-query protocol — CedarDB
+    accepts DDL through that path but silently no-ops some of it under
+    extended Parse/Bind/Execute, so we force the simpler path.
+  </p>
+<pre><code class="language-sql">CREATE TABLE IF NOT EXISTS plans (
+    plan_id           INTEGER PRIMARY KEY,
+    name              TEXT NOT NULL,
+    monthly_price_usd NUMERIC(8, 2) NOT NULL,
+    sla_seconds       INTEGER NOT NULL
+);
+-- ... regions, device_types, households, devices, events, alerts ...
+-- ... plus the four supporting indexes (trimmed for the high-rate demo —
+--     every secondary index on events is write amplification at 500 K/s):
+CREATE INDEX IF NOT EXISTS events_household_ts_idx ON events (household_id, ts DESC);
+CREATE INDEX IF NOT EXISTS events_kind_ts_idx      ON events (kind, ts DESC);
+CREATE INDEX IF NOT EXISTS alerts_status_raised_idx
+    ON alerts (status, raised_at DESC);
+CREATE INDEX IF NOT EXISTS alerts_household_raised_idx
+    ON alerts (household_id, raised_at DESC);</code></pre>
+</div>
+
+<div class="q" id="upsert-dims">
+  <div class="q-hdr">
+    <h3><a href="#upsert-dims">Upsert dimensions (plans, regions, device_types)</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-once">once · single batch</span>
+      <span class="pill">~25 rows total</span>
+      <span class="pill src">internal/sim/simulator.go · upsertDimensions()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    The three small static dimension tables are populated from
+    <code>catalog.go</code> using <code>INSERT ... ON CONFLICT DO UPDATE</code>
+    so the simulator is safe to restart against a hot database. All three
+    upserts ride a single <code>pgx.Batch</code>.
+  </p>
+<pre><code class="language-sql">-- plans
+INSERT INTO plans (plan_id, name, monthly_price_usd, sla_seconds)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (plan_id) DO UPDATE SET
+    name              = EXCLUDED.name,
+    monthly_price_usd = EXCLUDED.monthly_price_usd,
+    sla_seconds       = EXCLUDED.sla_seconds;
+
+-- regions
+INSERT INTO regions (region_id, name, dispatch_center, timezone)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (region_id) DO UPDATE SET
+    name            = EXCLUDED.name,
+    dispatch_center = EXCLUDED.dispatch_center,
+    timezone        = EXCLUDED.timezone;
+
+-- device_types
+INSERT INTO device_types (device_type_id, code, name, default_severity)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (device_type_id) DO UPDATE SET
+    code             = EXCLUDED.code,
+    name             = EXCLUDED.name,
+    default_severity = EXCLUDED.default_severity;</code></pre>
+</div>
+
+<div class="q" id="upsert-households">
+  <div class="q-hdr">
+    <h3><a href="#upsert-households">Upsert household fleet</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-once">once · batched 1 000/round</span>
+      <span class="pill">~30 000 rows default</span>
+      <span class="pill src">internal/sim/simulator.go · upsertHouseholds()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Synthesised fleet from <code>generateFleet()</code>. Run as batches of
+    1 000 INSERTs per <code>pgx.Batch.SendBatch</code> — simpler and almost
+    as fast as a staging-table COPY at this scale, idempotent on restart.
+  </p>
+<pre><code class="language-sql">INSERT INTO households (
+    household_id, plan_id, region_id, address_hash, armed
+)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (household_id) DO UPDATE SET
+    plan_id   = EXCLUDED.plan_id,
+    region_id = EXCLUDED.region_id,
+    armed     = EXCLUDED.armed;</code></pre>
+</div>
+
+<div class="q" id="upsert-devices">
+  <div class="q-hdr">
+    <h3><a href="#upsert-devices">Upsert device fleet</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-once">once · batched 1 000/round</span>
+      <span class="pill">~300 000 rows default</span>
+      <span class="pill src">internal/sim/simulator.go · upsertDevices()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Same shape as the households upsert. ~10 devices per household by
+    default; total fleet is whatever <code>-households</code> ×
+    <code>-devices-per-household</code> lands on.
+  </p>
+<pre><code class="language-sql">INSERT INTO devices (
+    device_id, household_id, device_type_id, location, last_battery_pct
+)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (device_id) DO UPDATE SET
+    household_id     = EXCLUDED.household_id,
+    device_type_id   = EXCLUDED.device_type_id,
+    location         = EXCLUDED.location,
+    last_battery_pct = EXCLUDED.last_battery_pct;</code></pre>
+</div>
+
+<!-- ================================================================== -->
+<h2 class="section" id="reset">5. Schema reset<span class="count">1 query · destructive · behind a flag</span></h2>
+
+<div class="q" id="reset-drops">
+  <div class="q-hdr">
+    <h3><a href="#reset-drops">DROP everything (reverse FK order)</a></h3>
+    <div class="q-meta">
+      <span class="pill freq-once">on -reset-schema</span>
+      <span class="pill">8 tables</span>
+      <span class="pill src">internal/db/schema.go · ResetSchema()</span>
+    </div>
+  </div>
+  <p class="q-explain">
+    Only runs when the simulator is started with <code>-reset-schema</code>.
+    Dropped in reverse-FK order so the CASCADE never has anything real to
+    do, then <code>ApplySchema</code> rebuilds.
+  </p>
+<pre><code class="language-sql">DROP TABLE IF EXISTS storage_samples CASCADE;
+DROP TABLE IF EXISTS alerts          CASCADE;
+DROP TABLE IF EXISTS events          CASCADE;
+DROP TABLE IF EXISTS devices         CASCADE;
+DROP TABLE IF EXISTS households      CASCADE;
+DROP TABLE IF EXISTS device_types    CASCADE;
+DROP TABLE IF EXISTS regions         CASCADE;
+DROP TABLE IF EXISTS plans           CASCADE;</code></pre>
+</div>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+</body>
+</html>

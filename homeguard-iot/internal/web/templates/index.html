@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HomeGuard IoT — CedarDB Operator Console</title>
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --line: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #FB773E;   /* CedarDB orange */
+    --green: #1ee2a2;
+    --red:   #ff5577;
+    --yellow:#f4d04e;
+    --blue:  #3aa6ff;
+    --purple:#9966ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+  header h1 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header h1 .logo { height: 28px; width: auto; display: block; }
+  header h1 .sep  { color: var(--muted); font-weight: 400; }
+  header .meta    { color: var(--muted); font-size: 12px; }
+
+  main {
+    display: grid;
+    grid-template-rows: 1.2fr 1fr;
+    gap: 10px;
+    padding: 10px;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .row { display: grid; gap: 10px; min-height: 0; }
+  .row.top    { grid-template-columns: 1fr; }
+  .row.bottom { grid-template-columns: 1.3fr 1fr 1fr; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .panel h2 {
+    font-size: 11px;
+    margin: 0 0 8px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    flex: 0 0 auto;
+  }
+  .panel h2 .accent { color: var(--accent); }
+  .panel-body { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+
+  /* --- Alerts queue ----------------------------------------------------- */
+  table.alerts { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.alerts th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 400;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    position: sticky;
+    top: 0;
+    background: var(--panel);
+  }
+  table.alerts td { padding: 6px 8px; border-bottom: 1px solid #1c2128; }
+  table.alerts td.sev   { font-weight: 700; text-align: center; width: 38px; }
+  table.alerts td.detail{ font-weight: 500; }
+  table.alerts td.sla   { font-variant-numeric: tabular-nums; }
+  table.alerts td.sla.breached { color: var(--red); font-weight: 700; }
+  table.alerts td.sla.warn     { color: var(--yellow); }
+  table.alerts td.code  { color: var(--muted); font-size: 12px; }
+  table.alerts tr.sev5 td.sev { color: var(--red); }
+  table.alerts tr.sev4 td.sev { color: #ff8c1a; }
+  table.alerts tr.sev3 td.sev { color: var(--yellow); }
+  table.alerts tr.sev2 td.sev { color: var(--blue); }
+  table.alerts tr.sev1 td.sev { color: var(--muted); }
+
+  /* --- Event stream ---------------------------------------------------- */
+  ul.events { list-style: none; padding: 0; margin: 0; font-size: 12px; }
+  ul.events li {
+    display: grid;
+    grid-template-columns: 60px 80px 110px 1fr 60px;
+    gap: 8px;
+    padding: 3px 4px;
+    border-bottom: 1px solid #1c2128;
+    align-items: center;
+  }
+  ul.events li .ts       { color: var(--muted); font-variant-numeric: tabular-nums; }
+  ul.events li .hh       { color: var(--accent); }
+  ul.events li .dev      { font-weight: 700; }
+  ul.events li .where    { color: var(--muted); }
+  ul.events li .meta     { color: var(--muted); text-align: right; }
+  ul.events li.kind-1    { background: rgba(244, 208, 78, 0.04); }
+  ul.events li.kind-4    { background: rgba(255, 85, 119, 0.06); }
+  ul.events li.sev-5     { background: rgba(255, 85, 119, 0.08); }
+  .kind-tag {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border: 1px solid currentColor;
+  }
+  .kind-tag.k1 { color: var(--yellow); }
+  .kind-tag.k2 { color: var(--blue); }
+  .kind-tag.k3 { color: var(--muted); }
+  .kind-tag.k4 { color: var(--red); }
+
+  /* --- Drilldown ------------------------------------------------------- */
+  .drill-hdr { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; margin-bottom: 6px; color: var(--muted); }
+  .drill-hdr .accent { color: var(--accent); font-weight: 700; }
+  .drill-hdr .armed  { color: var(--red); font-weight: 700; }
+  .drill-hdr .disarmed { color: var(--muted); }
+  table.drill { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.drill td { padding: 3px 6px; border-bottom: 1px solid #1c2128; vertical-align: top; }
+  table.drill td.ts { color: var(--muted); font-variant-numeric: tabular-nums; width: 70px; }
+  table.drill td.dev { font-weight: 700; width: 100px; }
+  table.drill td.where { color: var(--muted); }
+  table.drill tr.sev-high td { background: rgba(255,85,119,0.05); }
+
+  /* --- Storage gauge --------------------------------------------------- */
+  .gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .gauge-wrap svg { width: 100%; max-width: 220px; height: auto; display: block; }
+  .gauge-track   { stroke: #1c2128; }
+  .gauge-fill    { stroke: var(--accent); transition: stroke-dasharray 0.3s ease, stroke 0.3s ease; }
+  .gauge-fill.warn { stroke: var(--yellow); }
+  .gauge-fill.good { stroke: var(--green);  }
+  .gauge-tick    { stroke: var(--muted); stroke-width: 1; }
+  .gauge-label-target { fill: var(--muted); font: 600 9px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.05em; }
+  .gauge-value   {
+    fill: var(--text);
+    font: 700 22px ui-monospace, "SF Mono", Menlo, monospace;
+    text-anchor: middle;
+    font-variant-numeric: tabular-nums;
+  }
+  .gauge-unit { fill: var(--muted); font: 400 10px ui-monospace, "SF Mono", Menlo, monospace; text-anchor: middle; }
+  .gauge-caption { font-size: 11px; color: var(--muted); text-align: center; }
+  .gauge-caption strong { color: var(--accent); font-weight: 700; }
+
+  table.storage {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  table.storage td { padding: 3px 4px; border-bottom: 1px solid #1c2128; }
+  table.storage td.lbl   { color: var(--muted); width: 38%; }
+  table.storage td.val   { font-weight: 700; }
+  table.storage td.pct   { color: var(--muted); text-align: right; font-size: 11px; }
+  table.storage td.pct.good { color: var(--green); }
+  table.storage td.pct.warn { color: var(--yellow); }
+  table.storage td.pct.low  { color: var(--red); }
+  .storage-foot {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .storage-foot .accent { color: var(--accent); font-weight: 700; }
+
+  /* --- Footer ---------------------------------------------------------- */
+  footer {
+    padding: 5px 20px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+    flex: 0 0 auto;
+  }
+  footer .accent  { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+  footer .alerts  { color: var(--yellow); font-variant-numeric: tabular-nums; }
+  footer .docs-link { color: var(--accent); text-decoration: none; border-bottom: 1px dotted rgba(251,119,62,0.5); }
+  footer .docs-link:hover { border-bottom-color: var(--accent); }
+
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>
+    <img src="/static/cedardb-logo.svg" alt="CedarDB" class="logo">
+    <span class="sep">&nbsp;</span>
+    HOMEGUARD&nbsp;IoT&nbsp;·&nbsp;OPERATOR&nbsp;CONSOLE
+  </h1>
+  <div class="meta">
+    Active alerts <span id="hdr-active">0</span> ·
+    Events ingested <span id="hdr-total">0</span> ·
+    <span id="conn-status">connecting…</span>
+  </div>
+</header>
+
+<main>
+  <section class="row top">
+    <div class="panel">
+      <h2>Active Alerts <span class="accent">·</span> SLA-aware <span class="muted" style="float:right;font-weight:400">refresh {{.AlertsRefreshMs}} ms · joins alerts × households × plans × regions</span></h2>
+      <div class="panel-body"
+           hx-get="/api/alerts"
+           hx-trigger="load, every {{.AlertsRefreshMs}}ms"
+           hx-swap="innerHTML">
+        <p class="muted">waiting for first alert…</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="row bottom">
+    <div class="panel">
+      <h2>Live Event Stream <span class="accent">·</span> non-heartbeat <span class="muted" style="float:right;font-weight:400">SSE · joins events × devices × device_types × households × regions</span></h2>
+      <ul id="events" class="events panel-body">
+        <li class="muted">connecting to stream…</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Customer Drill-Down <span class="accent">·</span> highest-severity household <span class="muted" style="float:right;font-weight:400">refresh {{.DrilldownRefreshMs}} ms</span></h2>
+      <div class="panel-body"
+           hx-get="/api/drilldown"
+           hx-trigger="load, every {{.DrilldownRefreshMs}}ms"
+           hx-swap="innerHTML">
+        <p class="muted">selecting household…</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Storage Growth <span class="accent">·</span> uncompressed <span class="muted" style="float:right;font-weight:400">cedardb_compression_info · refresh 1 s</span></h2>
+      <div class="panel-body">
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg" aria-label="1-minute ingest rate gauge">
+            <!-- 180° arc, opens downward; centre (100,100) radius 75 -->
+            <path class="gauge-track"
+                  d="M 25 100 A 75 75 0 0 1 175 100"
+                  fill="none" stroke-width="14" stroke-linecap="round"/>
+            <path id="gauge-fill" class="gauge-fill"
+                  d="M 25 100 A 75 75 0 0 1 175 100"
+                  fill="none" stroke-width="14" stroke-linecap="round"
+                  pathLength="100" stroke-dasharray="0 100"/>
+            <!-- 50% / 100% tick marks for visual orientation -->
+            <line class="gauge-tick" x1="100" y1="22" x2="100" y2="28"/>
+            <text x="100" y="65" class="gauge-value" id="gauge-mbps">—</text>
+            <text x="100" y="83" class="gauge-unit">MB/s · 1m avg</text>
+            <text x="100" y="122" class="gauge-label-target" text-anchor="middle">TARGET 34.7 MB/s · 3 TB/day</text>
+          </svg>
+          <div class="gauge-caption" id="gauge-caption">collecting samples…</div>
+        </div>
+        <table class="storage" id="storage-table">
+          <tr>
+            <td class="lbl">Total uncompressed</td>
+            <td class="val" id="st-total">—</td>
+            <td class="pct"></td>
+          </tr>
+          <tr>
+            <td class="lbl">1-minute rate</td>
+            <td class="val" id="st-1m">—</td>
+            <td class="pct" id="st-1m-pct"></td>
+          </tr>
+          <tr>
+            <td class="lbl">5-minute rate</td>
+            <td class="val" id="st-5m">—</td>
+            <td class="pct" id="st-5m-pct"></td>
+          </tr>
+          <tr>
+            <td class="lbl">15-minute rate</td>
+            <td class="val" id="st-15m">—</td>
+            <td class="pct" id="st-15m-pct"></td>
+          </tr>
+        </table>
+        <div class="storage-foot">
+          Projected daily (current 1m rate):
+          <span class="accent" id="st-projection">—</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>
+    INSERTs: <span id="rate" class="accent">— ev/sec</span> ·
+    <span id="total" class="accent">— total events</span> ·
+    <span id="alerts" class="alerts">— active / — total alerts</span> ·
+    one table, four concurrent reads · CedarDB ·
+    <a href="/static/queries.html" target="_blank" rel="noopener" class="docs-link">SQL queries&nbsp;↗</a>
+  </span>
+  <span id="last-frame" class="muted">—</span>
+</footer>
+
+<script>
+const kindNames = { 0: "HB", 1: "TRIG", 2: "BATT", 3: "OFFL", 4: "TAMP" };
+
+function renderEvents(snap) {
+  const ul = document.getElementById("events");
+  if (!snap.events || snap.events.length === 0) {
+    ul.innerHTML = '<li class="muted">no triggered events yet…</li>';
+    return;
+  }
+  ul.innerHTML = snap.events.map(e => {
+    const cls = `kind-${e.kind}` + (e.severity >= 4 ? " sev-5" : "");
+    const tag = `<span class="kind-tag k${e.kind}">${kindNames[e.kind] || e.kind}</span>`;
+    return `<li class="${cls}">
+      <span class="ts">${e.ts}</span>
+      <span class="hh">#${e.household_id}</span>
+      <span class="dev">${e.device_code}</span>
+      <span class="where">${e.location.replace(/_/g, " ")} · ${e.region}</span>
+      <span class="meta">${tag}</span>
+    </li>`;
+  }).join("");
+  document.getElementById("last-frame").textContent =
+    "last frame " + new Date(snap.stamp_ms).toLocaleTimeString();
+}
+
+let es;
+function openStream() {
+  es = new EventSource("/sse/events");
+  es.onopen    = () => document.getElementById("conn-status").textContent = "stream OK";
+  es.onerror   = () => document.getElementById("conn-status").textContent = "stream reconnecting…";
+  es.onmessage = (e) => {
+    try { renderEvents(JSON.parse(e.data)); } catch { /* ignore */ }
+  };
+}
+
+async function refreshStats() {
+  try {
+    const r = await fetch("/api/stats");
+    const d = await r.json();
+    document.getElementById("rate").textContent =
+      (d.rows_per_sec || 0).toLocaleString() + " ev/sec";
+    document.getElementById("total").textContent =
+      (d.total_events || 0).toLocaleString() + " total events";
+    document.getElementById("alerts").textContent =
+      `${(d.active_alerts || 0).toLocaleString()} active / ` +
+      `${(d.total_alerts || 0).toLocaleString()} total alerts`;
+    document.getElementById("hdr-active").textContent =
+      (d.active_alerts || 0).toLocaleString();
+    document.getElementById("hdr-total").textContent =
+      (d.total_events || 0).toLocaleString();
+  } catch (e) { /* keep polling */ }
+}
+
+openStream();
+refreshStats();
+setInterval(refreshStats, {{.StatsRefreshMs}});
+
+// --- Storage gauge ------------------------------------------------------
+const STORAGE_TARGET_BPS = 34_722_222; // 3 TB / day
+
+function humanBytes(n) {
+  if (n === undefined || n === null || isNaN(n)) return "—";
+  const units = ["B", "KB", "MB", "GB", "TB", "PB"];
+  let i = 0, v = n;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2) + " " + units[i];
+}
+function humanRate(bps) {
+  if (bps === undefined || bps === null || isNaN(bps)) return "—";
+  return humanBytes(bps) + "/s";
+}
+function pctOfTarget(bps) {
+  if (bps === undefined || bps === null || isNaN(bps)) return null;
+  return (bps / STORAGE_TARGET_BPS) * 100;
+}
+function pctClass(p) {
+  if (p === null) return "";
+  if (p >= 95) return "good";
+  if (p >= 60) return "warn";
+  return "low";
+}
+function setPct(elId, bps) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const p = pctOfTarget(bps);
+  if (p === null) { el.textContent = ""; el.className = "pct"; return; }
+  el.textContent = p.toFixed(1) + "%";
+  el.className = "pct " + pctClass(p);
+}
+
+async function refreshStorage() {
+  let d;
+  try {
+    const r = await fetch("/api/storage");
+    d = await r.json();
+  } catch (e) { return; }
+
+  // Gauge: % of target driven by the 1-minute rate. Cap at 110% visually
+  // so we don't run past the arc.
+  const r1 = d.rate_1m_bps;
+  const pct1 = pctOfTarget(r1);
+  const fill = document.getElementById("gauge-fill");
+  if (pct1 === null) {
+    fill.setAttribute("stroke-dasharray", "0 100");
+    document.getElementById("gauge-mbps").textContent = "—";
+    document.getElementById("gauge-caption").textContent = "collecting samples…";
+  } else {
+    const clamped = Math.max(0, Math.min(pct1, 110));
+    fill.setAttribute("stroke-dasharray", clamped.toFixed(2) + " " + (100 - clamped).toFixed(2));
+    fill.classList.remove("warn", "good");
+    if (pct1 >= 95)      fill.classList.add("good");
+    else if (pct1 >= 60) fill.classList.add("warn");
+    const mbps = r1 / 1_000_000;
+    document.getElementById("gauge-mbps").textContent = mbps.toFixed(mbps >= 100 ? 0 : 1);
+    document.getElementById("gauge-caption").textContent =
+      pct1.toFixed(1) + "% of target · " + humanRate(r1);
+  }
+
+  // Table
+  document.getElementById("st-total").textContent = humanBytes(d.latest_bytes);
+  document.getElementById("st-1m").textContent  = humanRate(d.rate_1m_bps);
+  document.getElementById("st-5m").textContent  = humanRate(d.rate_5m_bps);
+  document.getElementById("st-15m").textContent = humanRate(d.rate_15m_bps);
+  setPct("st-1m-pct",  d.rate_1m_bps);
+  setPct("st-5m-pct",  d.rate_5m_bps);
+  setPct("st-15m-pct", d.rate_15m_bps);
+
+  // Daily projection from the freshest (1m) rate
+  const proj = document.getElementById("st-projection");
+  if (d.rate_1m_bps === undefined || d.rate_1m_bps === null) {
+    proj.textContent = "—";
+  } else {
+    const perDay = d.rate_1m_bps * 86400;
+    proj.textContent = humanBytes(perDay) + " / day";
+  }
+}
+refreshStorage();
+setInterval(refreshStorage, {{.StorageRefreshMs}});
+</script>
+</body>
+</html>
